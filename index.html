@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>💕 Chat App (Firebase + Notifications) 💕</title>
+  <title>💕 Chat App (Firebase + Notifications) — Fixed</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
@@ -28,6 +28,8 @@
     let screenHistory = [];
     let currentActiveRoom = null;
     let notifCount = 0;
+    let notifCache = {}; // store loaded notifs
+    let typingTimeouts = {};
 
     function ensureCurrentUserFromStorage() {
       if (!currentUser || !currentUser.userid) {
@@ -41,21 +43,20 @@
     function showScreen(id) {
       resetScreens();
       document.getElementById(id).style.display = "block";
-      screenHistory.push(id);
+      // prevent duplicate consecutive entries
+      if (screenHistory[screenHistory.length-1] !== id) screenHistory.push(id);
     }
 
-    function goBack() {
-      // remove current
-      screenHistory.pop();
-      resetScreens();
-      let prev = screenHistory.pop();
-      if (!prev) prev = "homeScreen";
-      document.getElementById(prev).style.display = "block";
-      screenHistory.push(prev);
-      // update presence: leaving chat -> clear activeRoom
-      if (currentActiveRoom && prev !== "chatScreen") {
-        set(ref(db, "presence/" + currentUser.userid + "/activeRoom"), null).catch(()=>{});
-        currentActiveRoom = null;
+    window.goBack = function() {
+      if (screenHistory.length > 1) {
+        screenHistory.pop();
+        const prev = screenHistory[screenHistory.length - 1];
+        resetScreens();
+        document.getElementById(prev).style.display = "block";
+      } else {
+        resetScreens();
+        document.getElementById("homeScreen").style.display = "block";
+        screenHistory = ["homeScreen"];
       }
     }
 
@@ -208,6 +209,8 @@
         if (snap.exists()) {
           const mates = snap.val();
           Object.values(mates).forEach(m => {
+            if (m.userid === currentUser.userid) return; // skip self
+            if (m.userid === currentUser.userid) return; // skip self
             const card = document.createElement("div");
             card.className = "mateCard";
             card.innerHTML = `
@@ -239,7 +242,8 @@
 
     function resetScreens() {
       ["homeScreen","matesScreen","profileScreen","chatScreen","chatRoomsScreen"].forEach(id => {
-        document.getElementById(id).style.display = "none";
+        const el = document.getElementById(id);
+        if (el) el.style.display = "none";
       });
     }
 
@@ -294,6 +298,7 @@
           return;
         }
         // increment badge & add to list
+        notifCache[key] = notif;
         notifCount++;
         updateBellCount();
         addNotifToBellList(key, notif);
@@ -312,7 +317,9 @@
       const row = document.createElement("div");
       row.className = "notifRow";
       const time = new Date(notif.ts).toLocaleString();
-      row.innerHTML = `<div style="flex:1"><div style="font-weight:700">${escapeHtml(notif.from)}</div><div style="font-size:13px;color:#333;margin-top:4px">${escapeHtml(notif.text)}</div><div style="font-size:11px;color:#666;margin-top:6px">${escapeHtml(time)}</div></div><div style="display:flex;flex-direction:column;gap:6px"><button onclick="(function(){ openChatRoom('${notif.roomId.split('_').find(id=>id!==currentUser.userid)}','${escapeJs(notif.from)}'); markNotifRead('${key}'); })()">Open</button><button onclick="(function(){ markNotifRead('${key}'); })()">Dismiss</button></div>`;
+      // infer mateId from roomId relative to current user
+      const mateId = (notif.roomId || "").split('_').find(id=>id!==currentUser.userid) || "";
+      row.innerHTML = `<div style="flex:1"><div style="font-weight:700">${escapeHtml(notif.from)}</div><div style="font-size:13px;color:#333;margin-top:4px">${escapeHtml(notif.text)}</div><div style="font-size:11px;color:#666;margin-top:6px">${escapeHtml(time)}</div></div><div style="display:flex;flex-direction:column;gap:6px"><button onclick="(function(){ openChatRoom('${mateId}','${escapeJs(notif.from)}'); markNotifRead('${key}'); })()">Open</button><button onclick="(function(){ markNotifRead('${key}'); })()">Dismiss</button></div>`;
       row.id = "notif_" + key;
       list.prepend(row);
     }
@@ -321,7 +328,18 @@
       try { remove(ref(db, "notifications/" + currentUser.userid + "/" + key)); } catch(e){}
       const el = document.getElementById("notif_" + key);
       if (el) el.remove();
+      if (notifCache[key]) delete notifCache[key];
       notifCount = Math.max(0, notifCount - 1);
+      updateBellCount();
+    }
+
+    function clearAllNotifications() {
+      try {
+        remove(ref(db, "notifications/" + currentUser.userid));
+      } catch(e){}
+      document.getElementById("notifList").innerHTML = "";
+      notifCache = {};
+      notifCount = 0;
       updateBellCount();
     }
 
@@ -337,6 +355,30 @@
       setTimeout(()=>{ try{ toast.remove(); }catch(e){} }, 5000);
     }
 
+    async function loadNotificationsList() {
+      ensureCurrentUserFromStorage();
+      if (!currentUser.userid) return;
+      const list = document.getElementById("notifList");
+      list.innerHTML = "";
+      notifCache = {};
+      try {
+        const snap = await get(child(dbRef, "notifications/" + currentUser.userid));
+        if (!snap.exists()) {
+          notifCount = 0;
+          updateBellCount();
+          list.innerHTML = "<div style='color:#666;padding:8px'>No notifications</div>";
+          return;
+        }
+        const data = snap.val();
+        const keys = Object.keys(data).sort((a,b)=>Number(b)-Number(a));
+        notifCount = keys.length;
+        updateBellCount();
+        keys.forEach(k => { notifCache[k] = data[k]; addNotifToBellList(k, data[k]); });
+      } catch(e){
+        console.error("loadNotificationsList err", e);
+      }
+    }
+
     window.openChatRoom = async function (mateId, mateName) {
       ensureCurrentUserFromStorage();
       if (!currentUser.userid) { alert("Login first"); return; }
@@ -345,6 +387,7 @@
       // update presence activeRoom
       try { set(ref(db, "presence/" + currentUser.userid), { online: true, lastSeen: Date.now(), activeRoom: currentActiveRoom }); } catch(e) {}
       document.getElementById("chatWith").innerText = "Chatting with " + mateName;
+      document.getElementById("typingIndicator").innerText = "";
       const chatBox = document.getElementById("chatBox");
       chatBox.innerHTML = "";
       // remove notifications for this room for current user (they are now viewing)
@@ -355,19 +398,57 @@
           Object.keys(notifs).forEach(k => { if (notifs[k] && notifs[k].roomId === currentActiveRoom) remove(ref(db, "notifications/" + currentUser.userid + "/" + k)); });
         }
       } catch(e){}
+      // mark this room as read for current user
+      try { set(ref(db, "reads/" + currentActiveRoom + "/" + currentUser.userid), Date.now()); } catch(e){}
+
+      // subscribe to typing indicator for this room
+      try {
+        const typingRef = ref(db, "typing/" + currentActiveRoom);
+        onValue(typingRef, (snap) => {
+          const val = snap.val() || {};
+          // remove own typing
+          if (val[currentUser.userid]) delete val[currentUser.userid];
+          const others = Object.keys(val || {}).filter(k=>val[k]);
+          const indicator = document.getElementById("typingIndicator");
+          if (others.length) {
+            indicator.innerText = "Typing...";
+          } else {
+            indicator.innerText = "";
+          }
+        });
+      } catch(e){ console.error("typing listen err", e); }
+
       // load messages and subscribe
       const messagesRef = ref(db, "chats/" + currentActiveRoom);
-      onChildAdded(messagesRef, (snapshot) => {
+      onChildAdded(messagesRef, async (snapshot) => {
         const msg = snapshot.val();
         const ts = msg.ts || Number(snapshot.key) || Date.now();
         const time = new Date(ts).toLocaleString();
         const div = document.createElement("div");
         const me = msg.user === currentUser.username;
         div.className = "msgRow " + (me ? "me" : "them");
-        div.innerHTML = `<div class="msgText"><strong>${escapeHtml(msg.user)}:</strong> ${escapeHtml(msg.text)}</div><div class="msgTime">${escapeHtml(time)}</div>`;
+
+        // compute ticks: check reads for this room
+        let isRead = false;
+        try {
+          const readsSnap = await get(child(dbRef, "reads/" + currentActiveRoom));
+          if (readsSnap.exists()) {
+            const reads = readsSnap.val();
+            // mateId is the one that's not currentUser in roomId
+            const mateIdFromRoom = currentActiveRoom.split('_').find(id=>id!==currentUser.userid);
+            if (reads && mateIdFromRoom && reads[mateIdFromRoom] && Number(reads[mateIdFromRoom]) >= Number(ts)) {
+              isRead = true;
+            }
+          }
+        } catch(e){}
+
+        // show message text and ticks (for messages I sent)
+        const ticksHtml = me ? `<div class="msgTicks">${ isRead ? '✔✔' : '✔' }</div>` : '';
+        div.innerHTML = `<div class="msgText"><strong>${escapeHtml(msg.user)}:</strong> ${escapeHtml(msg.text)}</div><div class="msgTime">${escapeHtml(time)} ${ticksHtml}</div>`;
         chatBox.appendChild(div);
         chatBox.scrollTop = chatBox.scrollHeight;
       });
+
       document.getElementById("sendBtn").onclick = async () => {
         const text = document.getElementById("message").value.trim();
         if (!text) return;
@@ -381,6 +462,9 @@
           if (!(matePresence && matePresence.activeRoom === currentActiveRoom)) {
             // mate not in same room -> add notification for mate
             addNotificationForUser(mateId, currentUser.username, text, currentActiveRoom);
+          } else {
+            // if mate is in same room, mark reads for both so ticks show as read
+            try { set(ref(db, "reads/" + currentActiveRoom + "/" + currentUser.userid), Date.now()); } catch(e){}
           }
         } catch(e) { console.error("presence check err", e); }
       };
@@ -397,6 +481,7 @@
         if (snap.exists()) {
           const mates = snap.val();
           Object.values(mates).forEach(m => {
+            if (m.userid === currentUser.userid) return; // skip self
             const btn = document.createElement("div");
             btn.className = "roomRow";
             btn.innerHTML = `<div class="roomName">Chat with ${escapeHtml(m.username)}</div><div class="roomActions"><button onclick="openChatRoom('${m.userid}','${escapeJs(m.username)}')">Open</button></div>`;
@@ -415,6 +500,20 @@
       }
     }
 
+    // typing helpers
+    function setTypingFlag(roomId, turningOn) {
+      if (!roomId) return;
+      try {
+        set(ref(db, "typing/" + roomId + "/" + currentUser.userid), turningOn ? true : null);
+      } catch(e){ console.error("setTypingFlag err", e); }
+    }
+    function debounceSetTyping(roomId, on) {
+      if (!roomId) return;
+      if (typingTimeouts[roomId]) clearTimeout(typingTimeouts[roomId]);
+      setTypingFlag(roomId, on);
+      typingTimeouts[roomId] = setTimeout(()=>{ setTypingFlag(roomId, false); }, 2000);
+    }
+
     window.onload = function () {
       const saved = localStorage.getItem("chatUser");
       if (saved) {
@@ -428,22 +527,45 @@
         } catch {}
       }
       checkFirebaseStatus();
-      // Bell click to toggle dropdown
-      document.getElementById("notifBell").onclick = function(e) {
+      // Bell click to toggle dropdown and load notifications
+      document.getElementById("notifBell").onclick = async function(e) {
+        e.stopPropagation();
         const dropdown = document.getElementById("notifDropdown");
-        dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
+        const isOpening = dropdown.style.display !== "block";
+        dropdown.style.display = isOpening ? "block" : "none";
+        if (isOpening) {
+          await loadNotificationsList();
+        }
       };
+      // "mark all read" control
+      document.getElementById("markAllReadBtn").onclick = function(){ clearAllNotifications(); };
+
       // click outside to close notif dropdown
       document.addEventListener("click", function(e){
         const dropdown = document.getElementById("notifDropdown");
         const bell = document.getElementById("notifBell");
         if (!bell.contains(e.target) && !dropdown.contains(e.target)) dropdown.style.display = "none";
       });
+
+      // typing UI hooks on message input
+      const messageInput = document.getElementById("message");
+      messageInput.addEventListener("input", function(){
+        if (!currentActiveRoom) return;
+        debounceSetTyping(currentActiveRoom, true);
+      });
+      messageInput.addEventListener("focus", function(){
+        if (!currentActiveRoom) return;
+        setTypingFlag(currentActiveRoom, true);
+      });
+      messageInput.addEventListener("blur", function(){
+        if (!currentActiveRoom) return;
+        setTypingFlag(currentActiveRoom, false);
+      });
     };
   </script>
 
   <style>
-    :root{ --accent:#ff4d88;--bg:#fff5f9;--white:#ffffff; }
+    :root{ --accent:#ff4d88;--bg:#fff5f9;--white:#ffffff; --blue:#3b82f6; }
     body{background:var(--bg);font-family:Inter,Arial,sans-serif;margin:18px;}
     .screen{display:none;max-width:900px;margin:18px auto;background:var(--white);padding:28px;border-radius:20px;box-shadow:0 8px 25px rgba(0,0,0,0.08);position:relative;}
     h2{color:var(--accent);text-align:center;margin:8px 0 18px 0;}
@@ -460,13 +582,13 @@
     .mateCard{display:flex;align-items:center;gap:12px;border:1px solid #f1f1f1;padding:12px;border-radius:12px;margin-bottom:10px;}
     .mate-left{font-size:34px;cursor:pointer;}
     .mname{font-weight:700;}
-    .back-small{position:fixed;left:20px;bottom:20px;background:#444;color:#fff;padding:10px 14px;border-radius:12px;cursor:pointer;}
+    .back-small{position:fixed;left:20px;bottom:20px;background:var(--blue);color:#fff;padding:10px 14px;border-radius:12px;cursor:pointer;border:none;}
     #chatBox{border:1px solid #eee;height:320px;overflow:auto;padding:12px;border-radius:12px;background:#fafafa;}
     /* messages: darker + bigger */
     .msgRow{padding:10px;margin-bottom:10px;border-radius:12px;max-width:75%;}
     .msgRow .msgText{font-size:16px;color:#111;font-weight:600;}
-    .msgRow .msgTime{font-size:12px;color:#666;margin-top:6px;}
-    .msgRow.me{background:#ffeef6;margin-left:auto;text-align:right;}
+    .msgRow .msgTime{font-size:12px;color:#666;margin-top:6px;display:flex;align-items:center;gap:8px;}
+    .msgRow.me{background:#e6f4ff;margin-left:auto;text-align:right;}
     .msgRow.them{background:#ffffff;margin-right:auto;text-align:left;}
     .roomRow{display:flex;justify-content:space-between;align-items:center;padding:12px;border:1px solid #f1f1f1;border-radius:10px;margin-bottom:8px;}
     .profileBig{display:flex;gap:16px;align-items:center;padding:16px;border:1px solid #f1f1f1;border-radius:12px;background:#fff;}
@@ -482,15 +604,17 @@
     #notifBell{position:fixed;top:20px;left:20px;background:#fff;border:1px solid #eee;padding:8px 10px;border-radius:999px;cursor:pointer;display:flex;align-items:center;gap:8px;box-shadow:0 6px 18px rgba(0,0,0,0.08);}
     #notifBell .icon{font-size:18px;color:var(--accent);}
     #notifCount{background:var(--accent);color:#fff;border-radius:999px;padding:4px 8px;font-size:13px;}
-    #notifDropdown{position:fixed;top:64px;left:20px;width:320px;background:#fff;border:1px solid #eee;border-radius:12px;padding:12px;display:none;box-shadow:0 8px 30px rgba(0,0,0,0.08);max-height:420px;overflow:auto;z-index:9999;}
+    #notifDropdown{position:fixed;top:64px;left:20px;width:360px;background:#fff;border:1px solid #eee;border-radius:12px;padding:12px;display:none;box-shadow:0 8px 30px rgba(0,0,0,0.08);max-height:420px;overflow:auto;z-index:9999;}
     .notifRow{display:flex;gap:12px;padding:10px;border-bottom:1px solid #f6f6f6;}
     .toastNotif{position:fixed;right:20px;bottom:20px;background:#fff;padding:12px;border-radius:12px;border:1px solid #eee;box-shadow:0 10px 30px rgba(0,0,0,0.08);z-index:9999;cursor:pointer;}
     .notifPopup{position:fixed;right:20px;bottom:90px;background:#fff;padding:12px;border-radius:12px;border:1px solid #eee;box-shadow:0 10px 30px rgba(0,0,0,0.12);z-index:10000;}
+    .msgTicks{font-size:14px;color:var(--blue);font-weight:700;margin-left:6px;}
+    #typingIndicator{font-size:13px;color:#666;margin-top:6px;}
   </style>
 </head>
 <body>
   <div id="notifBell"><span class="icon">🔔</span> <span id="notifCount"></span></div>
-  <div id="notifDropdown"><div style="font-weight:800;margin-bottom:8px">Notifications</div><div id="notifList"></div></div>
+  <div id="notifDropdown"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div style="font-weight:800">Notifications</div><button id="markAllReadBtn" style="background:#fff;color:var(--accent);border:1px solid var(--accent);padding:6px 10px;border-radius:8px">Mark all read</button></div><div id="notifList"></div></div>
   <div id="fbStatus">Checking Firebase...</div>
 
   <div id="step1" class="screen" style="display:block;">
@@ -546,6 +670,7 @@
 
   <div id="chatScreen" class="screen">
     <h2 id="chatWith"></h2>
+    <div id="typingIndicator"></div>
     <div id="chatBox"></div>
     <div style="display:flex;gap:12px;margin-top:12px;">
       <input id="message" placeholder="Type a message..." style="flex:1;" />
