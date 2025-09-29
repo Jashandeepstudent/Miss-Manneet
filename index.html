@@ -363,7 +363,7 @@ function updateProfileBubble(){
               <label style="font-weight:700">User ID (readonly)</label>
               <input id="edit_userid" value="${escapeHtml(id)}" readonly style="width:100%;background:#f7f7f7"/>
               <label style="font-weight:700">Change photo (optional)</label>
-              <input type="file" id="edit_profilePhoto" accept="image/*" />
+              <input type="file" id="edit_profilePhoto" accept="image/*" capture="environment" />
               <div style="display:flex;gap:8px;margin-top:8px;">
                 <button id="editProfileSaveBtn" onclick="(function(btn){btn.disabled=true;btn.innerText='Saving...';saveProfileEdits();})(this)">Save</button>
                 <button onclick="cancelEditProfile()" style="background:#fff;color:var(--accent);border:1px solid var(--accent)">Cancel</button>
@@ -592,24 +592,10 @@ function resetScreens() {
         // avatar (use msg.photo if present)
         let avatarHtml = (msg.photo && msg.photo.length) ? `<img src="${msg.photo}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;" />` : '👤';
         if (me) {
-        div.innerHTML = `<div style="display:flex;align-items:flex-end;justify-content:flex-end;gap:12px;">
-          <div style="display:flex;flex-direction:column;align-items:flex-end;max-width:calc(100% - 60px);">
-            <div class="msgSenderName">${escapeHtml(currentUser.username || 'You')}</div>
-            <div class="msgText">${escapeHtml(msg.text)}</div>
-            <div class="msgTime">${escapeHtml(time)} ${ticksHtml}</div>
-          </div>
-          <div class="msgAvatar">${avatarHtml}</div>
-        </div>`;
-      } else {
-        div.innerHTML = `<div style="display:flex;align-items:flex-start;gap:12px;">
-          <div class="msgAvatar">${avatarHtml}</div>
-          <div style="display:flex;flex-direction:column;align-items:flex-start;max-width:calc(100% - 60px);">
-            <div class="msgSenderName">${escapeHtml(msg.user)}</div>
-            <div class="msgText">${escapeHtml(msg.text)}</div>
-            <div class="msgTime">${escapeHtml(time)}</div>
-          </div>
-        </div>`;
-      }
+          div.innerHTML = `<div style="display:flex;align-items:center;justify-content:flex-end;gap:8px;"><div class="msgText">${escapeHtml(msg.text)}</div><div class="msgAvatar">${avatarHtml}</div></div><div class="msgTime">${escapeHtml(time)} ${ticksHtml}</div>`;
+        } else {
+          div.innerHTML = `<div style="display:flex;align-items:center;gap:12px;"><div class="msgAvatar">${avatarHtml}</div><div><div class="msgText"><strong>${escapeHtml(msg.user)}</strong>: ${escapeHtml(msg.text)}</div><div class="msgTime">${escapeHtml(time)}</div></div></div>`;
+        }
         chatBox.appendChild(div);
         chatBox.scrollTop = chatBox.scrollHeight;
       });
@@ -778,7 +764,30 @@ function resetScreens() {
     #typingIndicator{font-size:13px;color:#666;margin-top:6px;}
   .msgAvatar img{width:36px;height:36px;border-radius:50%;object-fit:cover;} .msgAvatar{font-size:22px;}
   
-  .msgSenderName{font-size:13px;color:#444;font-weight:700;margin-bottom:6px;}
+/* Mobile adjustments */
+@media (max-width: 600px) {
+  input, button {
+    font-size: 14px !important;
+    padding: 8px 10px !important;
+    border-radius: 8px !important;
+  }
+  h2 {
+    font-size: 18px !important;
+  }
+  .mainOptions {
+    flex-direction: column !important;
+    gap: 10px !important;
+  }
+  .mainOptions button {
+    width: 100% !important;
+    padding: 10px !important;
+  }
+  #searchInput {
+    width: 100% !important;
+    font-size: 14px !important;
+    padding: 8px !important;
+  }
+}
 
 </style>
 </head>
@@ -803,7 +812,7 @@ function resetScreens() {
     <div style="display:flex;flex-direction:column;gap:8px;">
     <input id="userid" placeholder="User ID (unique)" style="width:100%" />
     <label style="font-size:13px;color:#555">Upload profile photo (optional)</label>
-    <input type="file" id="profilePhoto" accept="image/*" style="margin-top:6px;" />
+    <input type="file" id="profilePhoto" accept="image/*" capture="environment" style="margin-top:6px;" />
     </div>
     <div style="margin-top:12px;">
       <button onclick="finishRegister()">Finish & Go to Home</button>
