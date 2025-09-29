@@ -2,12 +2,13 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>💕 Chat App (Firebase + Notifications) — Fixed</title>
+  <title>💕 Chat App For Jashan and Miss Manneet</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
     import {
       getDatabase, ref, set, onChildAdded, get, child, query, limitToLast,
+      
       onValue, onDisconnect, remove
     } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
 
@@ -23,6 +24,7 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
+    
     const dbRef = ref(db);
     let currentUser = {};
     let screenHistory = [];
@@ -70,22 +72,41 @@
       document.getElementById("step2").style.display = "block";
     };
 
-    window.finishRegister = function () {
+    window.finishRegister = async function () {
       const userid = document.getElementById("userid").value.trim();
+      const file = document.getElementById("profilePhoto").files[0];
       if (!userid) { alert("Enter User ID"); return; }
       currentUser.userid = userid;
-      set(ref(db, "users/" + userid), currentUser).then(() => {
-        localStorage.setItem("chatUser", JSON.stringify(currentUser));
-        document.getElementById("step2").style.display = "none";
-        // show Home only (no auto-open)
-        showHomeAfterLogin();
-        // set initial presence (online but no activeRoom)
-        try {
-          set(ref(db, "presence/" + currentUser.userid), { online: true, lastSeen: Date.now(), activeRoom: null });
-          try { onDisconnect(ref(db, "presence/" + currentUser.userid + "/online")).set(false); } catch(e) {}
-          try { onDisconnect(ref(db, "presence/" + currentUser.userid + "/activeRoom")).remove(); } catch(e) {}
-        } catch(e) {}
-      });
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          currentUser.photo = e.target.result; // base64 string
+          set(ref(db, "users/" + userid), currentUser).then(() => {
+            localStorage.setItem("chatUser", JSON.stringify(currentUser));
+            document.getElementById("step2").style.display = "none";
+            showHomeAfterLogin();
+            try{ updateProfileBubble(); }catch(e){}
+            
+            try {
+              set(ref(db, "presence/" + currentUser.userid), { online: true, lastSeen: Date.now(), activeRoom: null });
+              try { onDisconnect(ref(db, "presence/" + currentUser.userid + "/online")).set(false); } catch(e) {}
+              try { onDisconnect(ref(db, "presence/" + currentUser.userid + "/activeRoom")).remove(); } catch(e) {}
+            } catch(e) {}
+          });
+        };
+        reader.readAsDataURL(file);
+      } else {
+        set(ref(db, "users/" + userid), currentUser).then(() => {
+          localStorage.setItem("chatUser", JSON.stringify(currentUser));
+          document.getElementById("step2").style.display = "none";
+          showHomeAfterLogin();
+          try {
+            set(ref(db, "presence/" + currentUser.userid), { online: true, lastSeen: Date.now(), activeRoom: null });
+            try { onDisconnect(ref(db, "presence/" + currentUser.userid + "/online")).set(false); } catch(e) {}
+            try { onDisconnect(ref(db, "presence/" + currentUser.userid + "/activeRoom")).remove(); } catch(e) {}
+          } catch(e) {}
+        });
+      }
     };
 
     function showHomeAfterLogin() {
@@ -155,7 +176,76 @@
     }
     function escapeJs(str) { return String(str || "").replace(/'/g, "\\'"); }
 
-    window.showMyProfile = function () {
+function updateProfileBubble(){
+      try{
+        const el = document.getElementById("profileBubble");
+        if(!el) return;
+        if (currentUser && currentUser.photo) {
+          el.innerHTML = '<img src="'+currentUser.photo+'" style="width:54px;height:54px;border-radius:50%;object-fit:cover;" />';
+        } else {
+          el.innerText = '👤';
+        }
+      }catch(e){}
+    }
+
+    // helper: show an editable profile form (vertical) and allow saving photo + credentials
+    window.saveProfileEdits = async function(){
+      try{
+        const name = document.getElementById('edit_username').value.trim();
+        const pass = document.getElementById('edit_password').value.trim();
+        const file = document.getElementById('edit_profilePhoto').files[0];
+        if(!name){ alert('Enter a username'); return; }
+        currentUser.username = name;
+        if(pass) currentUser.password = pass;
+        if(file){
+          const reader = new FileReader();
+          reader.onload = async function(ev){
+            currentUser.photo = ev.target.result;
+            try{
+              await set(ref(db, 'users/' + currentUser.userid), currentUser);
+              localStorage.setItem('chatUser', JSON.stringify(currentUser));
+              // propagate photo to other people's mate lists
+              try{
+                const matesSnap = await get(child(dbRef, 'mates/' + currentUser.userid));
+                if(matesSnap.exists()){
+                  const mates = matesSnap.val();
+                  Object.keys(mates).forEach(mid => {
+                    try{ set(ref(db, 'mates/' + mid + '/' + currentUser.userid + '/photo'), currentUser.photo); }catch(e){}
+                  });
+                }
+              }catch(e){}
+              updateProfileBubble();
+              viewProfile(currentUser.username, currentUser.userid, currentUser.password || '');
+              showCustomAlert('Profile saved');
+              document.querySelector('#editProfileSaveBtn').disabled=false;
+              document.querySelector('#editProfileSaveBtn').innerText='Save';
+            }catch(e){ console.error(e); showCustomAlert('Error saving profile');
+              document.querySelector('#editProfileSaveBtn').disabled=false;
+              document.querySelector('#editProfileSaveBtn').innerText='Save'; }
+          };
+          reader.readAsDataURL(file);
+        } else {
+          try{
+            await set(ref(db, 'users/' + currentUser.userid), currentUser);
+            localStorage.setItem('chatUser', JSON.stringify(currentUser));
+            updateProfileBubble();
+            viewProfile(currentUser.username, currentUser.userid, currentUser.password || '');
+            showCustomAlert('Profile saved');
+              document.querySelector('#editProfileSaveBtn').disabled=false;
+              document.querySelector('#editProfileSaveBtn').innerText='Save';
+          }catch(e){ console.error(e); showCustomAlert('Error saving profile');
+              document.querySelector('#editProfileSaveBtn').disabled=false;
+              document.querySelector('#editProfileSaveBtn').innerText='Save'; }
+        }
+      }catch(e){ console.error(e); showCustomAlert('Error');
+      document.querySelector('#editProfileSaveBtn').disabled=false;
+      document.querySelector('#editProfileSaveBtn').innerText='Save'; }
+    }
+
+    function cancelEditProfile(){
+      if(currentUser && currentUser.userid) viewProfile(currentUser.username, currentUser.userid, currentUser.password || '');
+    }
+        window.showMyProfile = function () {
       ensureCurrentUserFromStorage();
       if (!currentUser.userid || !currentUser.username) { alert("Please complete registration"); return; }
       viewProfile(currentUser.username, currentUser.userid, currentUser.password || "");
@@ -174,7 +264,9 @@
           const mate = snap.val();
           resultBox.innerHTML = `
             <div class="profileCard">
-              <div class="pc-left"><div class="pc-avatar" onclick="viewProfile('${escapeJs(mate.username)}','${mate.userid}','')">👤</div></div>
+              <div class="pc-left">
+                ${mate.photo ? `<img src="${mate.photo}" style="width:50px;height:50px;border-radius:50%;object-fit:cover;" />` : '👤'}
+              </div>
               <div class="pc-body">
                 <div class="pc-name">${escapeHtml(mate.username)}</div>
                 <div class="pc-id">ID: ${escapeHtml(mate.userid)}</div>
@@ -190,12 +282,22 @@
       }
     };
 
-    window.makeMate = function (mateId, mateName) {
+    window.makeMate = async function (mateId, mateName) {
       ensureCurrentUserFromStorage();
       if (!currentUser.userid) { alert("Login first"); return; }
-      set(ref(db, "mates/" + currentUser.userid + "/" + mateId), { userid: mateId, username: mateName });
-      set(ref(db, "mates/" + mateId + "/" + currentUser.userid), { userid: currentUser.userid, username: currentUser.username });
-      document.getElementById("searchResult").innerHTML = `<div class="successMsg">Mate added successfully ✅</div>`;
+      try {
+        const snap = await get(child(dbRef, "users/" + mateId));
+        const mate = snap.exists() ? snap.val() : null;
+        const mateObj = { userid: mateId, username: mateName, photo: mate && mate.photo ? mate.photo : '' };
+        await set(ref(db, "mates/" + currentUser.userid + "/" + mateId), mateObj);
+        // reciprocate: include current user's photo as well
+        const myObj = { userid: currentUser.userid, username: currentUser.username, photo: currentUser.photo || '' };
+        await set(ref(db, "mates/" + mateId + "/" + currentUser.userid), myObj);
+        document.getElementById("searchResult").innerHTML = `<div class="successMsg">Mate added successfully ✅</div>`;
+      } catch(e){
+        console.error(e);
+        document.getElementById("searchResult").innerHTML = `<div class="successMsg">Error adding mate</div>`;
+      }
     };
 
     window.openMatesPage = async function () {
@@ -214,7 +316,9 @@
             const card = document.createElement("div");
             card.className = "mateCard";
             card.innerHTML = `
-              <div class="mate-left" onclick="viewProfile('${escapeJs(m.username)}','${m.userid}','')">👤</div>
+              <div class="mate-left">
+                ${m.photo ? `<img src="${m.photo}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;" />` : '👤'}
+              </div>
               <div class="mate-mid">
                 <div class="mname">${escapeHtml(m.username)}</div>
                 <div class="mid">ID: ${escapeHtml(m.userid)}</div>
@@ -228,19 +332,60 @@
 
     window.viewProfile = function (name, id, pass) {
       showScreen("profileScreen");
-      document.getElementById("profileContent").innerHTML = `
-        <div class="profileBig">
-          <div class="profileBigAvatar">👤</div>
-          <div class="profileBigInfo">
-            <div class="profileBigName">${escapeHtml(name)}</div>
-            <div style="margin-top:6px;">ID: <span class="highlightId">${escapeHtml(id)}</span></div>
-            <div style="margin-top:6px;">Password: ${pass ? escapeHtml(pass) : '[hidden]'}</div>
+      // If viewing current user -> allow edit
+      let photoHtml = "👤";
+      try {
+        const userData = JSON.parse(localStorage.getItem("chatUser") || "{}");
+        if (userData && userData.userid === id && userData.photo) {
+          photoHtml = `<img src="${userData.photo}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;" />`;
+        } else {
+          // try to load photo from users/ node
+          try{
+            get(child(dbRef, 'users/' + id)).then(snap => {
+              if(snap.exists() && snap.val().photo) {
+                document.getElementById('profileContent').querySelector('.profileBigAvatar').innerHTML = `<img src="${snap.val().photo}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;" />`;
+              }
+            });
+          }catch(e){}
+        }
+      } catch(e){}
+      // If this is own profile, show editable vertical form
+      const isMine = currentUser && currentUser.userid === id;
+      if(isMine){
+        document.getElementById("profileContent").innerHTML = `
+          <div class="profileBig" style="flex-direction:column;align-items:flex-start;">
+            <div class="profileBigAvatar">${photoHtml}</div>
+            <div style="width:100%;margin-top:12px;display:flex;flex-direction:column;gap:8px;">
+              <label style="font-weight:700">Username</label>
+              <input id="edit_username" value="${escapeHtml(name)}" style="width:100%"/>
+              <label style="font-weight:700">Password</label>
+              <input id="edit_password" type="text" value="${escapeHtml(pass)}" style="width:100%"/>
+              <label style="font-weight:700">User ID (readonly)</label>
+              <input id="edit_userid" value="${escapeHtml(id)}" readonly style="width:100%;background:#f7f7f7"/>
+              <label style="font-weight:700">Change photo (optional)</label>
+              <input type="file" id="edit_profilePhoto" accept="image/*" />
+              <div style="display:flex;gap:8px;margin-top:8px;">
+                <button id="editProfileSaveBtn" onclick="(function(btn){btn.disabled=true;btn.innerText='Saving...';saveProfileEdits();})(this)">Save</button>
+                <button onclick="cancelEditProfile()" style="background:#fff;color:var(--accent);border:1px solid var(--accent)">Cancel</button>
+              </div>
+            </div>
           </div>
-        </div>
-      `;
+        `;
+      } else {
+        document.getElementById("profileContent").innerHTML = `
+          <div class="profileBig">
+            <div class="profileBigAvatar">${photoHtml}</div>
+            <div class="profileBigInfo">
+              <div class="profileBigName">${escapeHtml(name)}</div>
+              <div style="margin-top:6px;">ID: <span class="highlightId">${escapeHtml(id)}</span></div>
+              <div style="margin-top:6px;">Password: [hidden]</div>
+            </div>
+          </div>
+        `;
+      }
     };
 
-    function resetScreens() {
+function resetScreens() {
       ["homeScreen","matesScreen","profileScreen","chatScreen","chatRoomsScreen"].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.display = "none";
@@ -444,7 +589,13 @@
 
         // show message text and ticks (for messages I sent)
         const ticksHtml = me ? `<div class="msgTicks">${ isRead ? '✔✔' : '✔' }</div>` : '';
-        div.innerHTML = `<div class="msgText"><strong>${escapeHtml(msg.user)}:</strong> ${escapeHtml(msg.text)}</div><div class="msgTime">${escapeHtml(time)} ${ticksHtml}</div>`;
+        // avatar (use msg.photo if present)
+        let avatarHtml = (msg.photo && msg.photo.length) ? `<img src="${msg.photo}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;" />` : '👤';
+        if (me) {
+          div.innerHTML = `<div style="display:flex;align-items:center;justify-content:flex-end;gap:8px;"><div class="msgText">${escapeHtml(msg.text)}</div><div class="msgAvatar">${avatarHtml}</div></div><div class="msgTime">${escapeHtml(time)} ${ticksHtml}</div>`;
+        } else {
+          div.innerHTML = `<div style="display:flex;align-items:center;gap:12px;"><div class="msgAvatar">${avatarHtml}</div><div><div class="msgText"><strong>${escapeHtml(msg.user)}</strong>: ${escapeHtml(msg.text)}</div><div class="msgTime">${escapeHtml(time)}</div></div></div>`;
+        }
         chatBox.appendChild(div);
         chatBox.scrollTop = chatBox.scrollHeight;
       });
@@ -453,7 +604,7 @@
         const text = document.getElementById("message").value.trim();
         if (!text) return;
         const ts = Date.now();
-        await set(ref(db, "chats/" + currentActiveRoom + "/" + ts), { user: currentUser.username, text, ts });
+        await set(ref(db, "chats/" + currentActiveRoom + "/" + ts), { user: currentUser.username, text, ts, photo: currentUser.photo || '' });
         document.getElementById("message").value = "";
         // after sending, check mate presence and add notification only if mate not in the same activeRoom
         try {
@@ -521,6 +672,7 @@
           currentUser = JSON.parse(saved);
           document.getElementById("step1").style.display = "none";
           showHomeAfterLogin();
+          try{ updateProfileBubble(); }catch(e){}
           // initialize presence & notification listener
           setPresenceOnline();
           listenForNotifications();
@@ -596,7 +748,7 @@
     .profileBigName{font-weight:800;font-size:22px;color:#333;}
     .highlightId{font-weight:700;color:var(--accent);}
     .successMsg{color:green;font-weight:600;padding:10px;}
-    #fbStatus{position:fixed;top:20px;right:20px;background:#000;color:#0f0;padding:8px 12px;border-radius:8px;font-size:13px;}
+   
     /* continue banner */
     .continueBanner{display:flex;gap:12px;align-items:center;padding:12px;border-radius:12px;background:#fff0f6;border:1px solid rgba(255,77,136,0.2);margin:12px 0;}
     .continueBanner button{background:#fff;color:var(--accent);border:1px solid var(--accent);padding:8px 12px;border-radius:8px;}
@@ -610,17 +762,20 @@
     .notifPopup{position:fixed;right:20px;bottom:90px;background:#fff;padding:12px;border-radius:12px;border:1px solid #eee;box-shadow:0 10px 30px rgba(0,0,0,0.12);z-index:10000;}
     .msgTicks{font-size:14px;color:var(--blue);font-weight:700;margin-left:6px;}
     #typingIndicator{font-size:13px;color:#666;margin-top:6px;}
+  .msgAvatar img{width:36px;height:36px;border-radius:50%;object-fit:cover;} .msgAvatar{font-size:22px;}
   </style>
 </head>
 <body>
   <div id="notifBell"><span class="icon">🔔</span> <span id="notifCount"></span></div>
   <div id="notifDropdown"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div style="font-weight:800">Notifications</div><button id="markAllReadBtn" style="background:#fff;color:var(--accent);border:1px solid var(--accent);padding:6px 10px;border-radius:8px">Mark all read</button></div><div id="notifList"></div></div>
-  <div id="fbStatus">Checking Firebase...</div>
+
 
   <div id="step1" class="screen" style="display:block;">
     <h2>Step 1 — Login</h2>
-    <input id="username" placeholder="Username" />
-    <input id="password" placeholder="Password" style="margin-top:8px;" />
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <input id="username" placeholder="Username" style="width:100%" />
+      <input id="password" type="text" placeholder="Password" style="width:100%" />
+    </div>
     <div style="margin-top:12px;">
       <button onclick="nextStep()">Next →</button>
     </div>
@@ -628,7 +783,11 @@
 
   <div id="step2" class="screen">
     <h2>Step 2 — Choose User ID</h2>
-    <input id="userid" placeholder="User ID (unique)" />
+    <div style="display:flex;flex-direction:column;gap:8px;">
+    <input id="userid" placeholder="User ID (unique)" style="width:100%" />
+    <label style="font-size:13px;color:#555">Upload profile photo (optional)</label>
+    <input type="file" id="profilePhoto" accept="image/*" style="margin-top:6px;" />
+    </div>
     <div style="margin-top:12px;">
       <button onclick="finishRegister()">Finish & Go to Home</button>
     </div>
@@ -637,7 +796,7 @@
   <div id="homeScreen" class="screen">
     <div id="defaultWhiteBox">
       <div style="display:flex;align-items:center;gap:18px;">
-        <div class="profileBubble" onclick="showMyProfile()">👤</div>
+        <div class="profileBubble" id="profileBubble" onclick="showMyProfile()">👤</div>
         <div style="font-weight:700;font-size:20px;color:var(--accent);">Main Options</div>
       </div>
       <div class="mainOptions">
@@ -684,5 +843,20 @@
     <div id="chatRoomList"></div>
     <button class="back-small" onclick="goBack()">⬅ Back</button>
   </div>
+
+<div id="customAlert" style="display:none;position:fixed;top:20px;right:20px;
+background:#4CAF50;color:#fff;padding:14px 20px;border-radius:10px;
+box-shadow:0 4px 12px rgba(0,0,0,0.2);z-index:10000;">
+  ✅ Profile updated successfully!
+</div>
+<script>
+function showCustomAlert(msg){
+  const box=document.getElementById("customAlert");
+  box.innerText=msg;
+  box.style.display="block";
+  setTimeout(()=>{box.style.display="none";},3000);
+}
+</script>
+
 </body>
 </html>
