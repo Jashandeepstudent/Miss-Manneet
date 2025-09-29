@@ -592,10 +592,24 @@ function resetScreens() {
         // avatar (use msg.photo if present)
         let avatarHtml = (msg.photo && msg.photo.length) ? `<img src="${msg.photo}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;" />` : '👤';
         if (me) {
-          div.innerHTML = `<div style="display:flex;align-items:center;justify-content:flex-end;gap:8px;"><div class="msgText">${escapeHtml(msg.text)}</div><div class="msgAvatar">${avatarHtml}</div></div><div class="msgTime">${escapeHtml(time)} ${ticksHtml}</div>`;
-        } else {
-          div.innerHTML = `<div style="display:flex;align-items:center;gap:12px;"><div class="msgAvatar">${avatarHtml}</div><div><div class="msgText"><strong>${escapeHtml(msg.user)}</strong>: ${escapeHtml(msg.text)}</div><div class="msgTime">${escapeHtml(time)}</div></div></div>`;
-        }
+        div.innerHTML = `<div style="display:flex;align-items:flex-end;justify-content:flex-end;gap:12px;">
+          <div style="display:flex;flex-direction:column;align-items:flex-end;max-width:calc(100% - 60px);">
+            <div class="msgSenderName">${escapeHtml(currentUser.username || 'You')}</div>
+            <div class="msgText">${escapeHtml(msg.text)}</div>
+            <div class="msgTime">${escapeHtml(time)} ${ticksHtml}</div>
+          </div>
+          <div class="msgAvatar">${avatarHtml}</div>
+        </div>`;
+      } else {
+        div.innerHTML = `<div style="display:flex;align-items:flex-start;gap:12px;">
+          <div class="msgAvatar">${avatarHtml}</div>
+          <div style="display:flex;flex-direction:column;align-items:flex-start;max-width:calc(100% - 60px);">
+            <div class="msgSenderName">${escapeHtml(msg.user)}</div>
+            <div class="msgText">${escapeHtml(msg.text)}</div>
+            <div class="msgTime">${escapeHtml(time)}</div>
+          </div>
+        </div>`;
+      }
         chatBox.appendChild(div);
         chatBox.scrollTop = chatBox.scrollHeight;
       });
@@ -763,7 +777,10 @@ function resetScreens() {
     .msgTicks{font-size:14px;color:var(--blue);font-weight:700;margin-left:6px;}
     #typingIndicator{font-size:13px;color:#666;margin-top:6px;}
   .msgAvatar img{width:36px;height:36px;border-radius:50%;object-fit:cover;} .msgAvatar{font-size:22px;}
-  </style>
+  
+  .msgSenderName{font-size:13px;color:#444;font-weight:700;margin-bottom:6px;}
+
+</style>
 </head>
 <body>
   <div id="notifBell"><span class="icon">🔔</span> <span id="notifCount"></span></div>
@@ -860,3 +877,4 @@ function showCustomAlert(msg){
 
 </body>
 </html>
+
