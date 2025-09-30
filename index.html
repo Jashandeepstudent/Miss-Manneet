@@ -645,9 +645,9 @@ function resetScreens() {
     function checkFirebaseStatus() {
       try {
         set(ref(db, "status/test"), { ping: Date.now() });
-        document.getElementById("fbStatus").innerText = "✅ Firebase Connected";
+        var el=document.getElementById("fbStatus"); if(el) el.innerText="✅ Firebase Connected";
       } catch {
-        document.getElementById("fbStatus").innerText = "❌ Firebase Offline";
+        var el=document.getElementById("fbStatus"); if(el) el.innerText="❌ Firebase Offline";
       }
     }
 
@@ -680,15 +680,16 @@ function resetScreens() {
       }
       checkFirebaseStatus();
       // Bell click to toggle dropdown and load notifications
-      document.getElementById("notifBell").onclick = async function(e) {
-        e.stopPropagation();
-        const dropdown = document.getElementById("notifDropdown");
-        const isOpening = dropdown.style.display !== "block";
-        dropdown.style.display = isOpening ? "block" : "none";
-        if (isOpening) {
-          await loadNotificationsList();
-        }
-      };
+document.getElementById("notifBell").onclick = async function (e) {
+  e.stopPropagation();
+  const dropdown = document.getElementById("notifDropdown");
+  if (dropdown.style.display === "block") {
+    dropdown.style.display = "none";
+  } else {
+    dropdown.style.display = "block";
+    await loadNotificationsList();
+  }
+};
       // "mark all read" control
       document.getElementById("markAllReadBtn").onclick = function(){ clearAllNotifications(); };
 
@@ -756,9 +757,9 @@ function resetScreens() {
     #notifBell{position:fixed;top:20px;left:20px;background:#fff;border:1px solid #eee;padding:8px 10px;border-radius:999px;cursor:pointer;display:flex;align-items:center;gap:8px;box-shadow:0 6px 18px rgba(0,0,0,0.08);}
     #notifBell .icon{font-size:18px;color:var(--accent);}
     #notifCount{background:var(--accent);color:#fff;border-radius:999px;padding:4px 8px;font-size:13px;}
-    #notifDropdown{position:fixed;top:64px;left:20px;width:360px;background:#fff;border:1px solid #eee;border-radius:12px;padding:12px;display:none;box-shadow:0 8px 30px rgba(0,0,0,0.08);max-height:420px;overflow:auto;z-index:9999;}
+    #notifDropdown{position:fixed;top:64px;left:20px;width:360px;background:#fff;border:1px solid #eee;border-radius:12px;padding:12px;display:none;box-shadow:0 8px 30px rgba(0,0,0,0.08);max-height:420px;overflow:auto;z-index:10000;}
     .notifRow{display:flex;gap:12px;padding:10px;border-bottom:1px solid #f6f6f6;}
-    .toastNotif{position:fixed;right:20px;bottom:20px;background:#fff;padding:12px;border-radius:12px;border:1px solid #eee;box-shadow:0 10px 30px rgba(0,0,0,0.08);z-index:9999;cursor:pointer;}
+    .toastNotif{position:fixed;right:20px;bottom:20px;background:#fff;padding:12px;border-radius:12px;border:1px solid #eee;box-shadow:0 10px 30px rgba(0,0,0,0.08);z-index:10000;cursor:pointer;}
     .notifPopup{position:fixed;right:20px;bottom:90px;background:#fff;padding:12px;border-radius:12px;border:1px solid #eee;box-shadow:0 10px 30px rgba(0,0,0,0.12);z-index:10000;}
     .msgTicks{font-size:14px;color:var(--blue);font-weight:700;margin-left:6px;}
     #typingIndicator{font-size:13px;color:#666;margin-top:6px;}
@@ -789,6 +790,7 @@ function resetScreens() {
   }
 }
 
+#fbStatus { display: none !important; }
 </style>
 </head>
 <body>
@@ -884,6 +886,7 @@ function showCustomAlert(msg){
 }
 </script>
 
+<div id="fbStatus" style="margin:10px;font-size:14px;color:#555"></div>
 </body>
 </html>
 
