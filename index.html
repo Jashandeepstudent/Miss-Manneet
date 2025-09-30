@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>💕 Chat App For Jashan and Miss Manneet — Photo chooser</title>
+  <title>💕 Chat App For Jashan and Miss Manneet</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
@@ -32,11 +32,6 @@
     let notifCount = 0;
     let notifCache = {}; // store loaded notifs
     let typingTimeouts = {};
-
-    // ----- NEW: file selectors state -----
-    let selectedRegisterPhotoFile = null;
-    let selectedEditPhotoFile = null;
-    let currentPhotoChooserMode = null; // 'register' or 'edit'
 
     function ensureCurrentUserFromStorage() {
       if (!currentUser || !currentUser.userid) {
@@ -77,10 +72,9 @@
       document.getElementById("step2").style.display = "block";
     };
 
-    // finishRegister updated to use selectedRegisterPhotoFile (from camera/gallery chooser)
     window.finishRegister = async function () {
       const userid = document.getElementById("userid").value.trim();
-      const file = selectedRegisterPhotoFile;
+      const file = document.getElementById("profilePhoto").files[0];
       if (!userid) { alert("Enter User ID"); return; }
       currentUser.userid = userid;
       if (file) {
@@ -98,11 +92,6 @@
               try { onDisconnect(ref(db, "presence/" + currentUser.userid + "/online")).set(false); } catch(e) {}
               try { onDisconnect(ref(db, "presence/" + currentUser.userid + "/activeRoom")).remove(); } catch(e) {}
             } catch(e) {}
-            // clear selection
-            selectedRegisterPhotoFile = null;
-            const cam = document.getElementById('profilePhotoCamera'); if(cam) cam.value='';
-            const gal = document.getElementById('profilePhotoGallery'); if(gal) gal.value='';
-            const prev = document.getElementById('profilePreview'); if(prev) prev.innerHTML='👤';
           });
         };
         reader.readAsDataURL(file);
@@ -116,11 +105,6 @@
             try { onDisconnect(ref(db, "presence/" + currentUser.userid + "/online")).set(false); } catch(e) {}
             try { onDisconnect(ref(db, "presence/" + currentUser.userid + "/activeRoom")).remove(); } catch(e) {}
           } catch(e) {}
-          // clear selection
-          selectedRegisterPhotoFile = null;
-          const cam = document.getElementById('profilePhotoCamera'); if(cam) cam.value='';
-          const gal = document.getElementById('profilePhotoGallery'); if(gal) gal.value='';
-          const prev = document.getElementById('profilePreview'); if(prev) prev.innerHTML='👤';
         });
       }
     };
@@ -209,8 +193,7 @@ function updateProfileBubble(){
       try{
         const name = document.getElementById('edit_username').value.trim();
         const pass = document.getElementById('edit_password').value.trim();
-        // check selectedEditPhotoFile first (chosen via modal)
-        const file = selectedEditPhotoFile;
+        const file = document.getElementById('edit_profilePhoto').files[0];
         if(!name){ alert('Enter a username'); return; }
         currentUser.username = name;
         if(pass) currentUser.password = pass;
@@ -236,10 +219,6 @@ function updateProfileBubble(){
               showCustomAlert('Profile saved');
               document.querySelector('#editProfileSaveBtn').disabled=false;
               document.querySelector('#editProfileSaveBtn').innerText='Save';
-              // clear edit selection
-              selectedEditPhotoFile = null;
-              const cam = document.getElementById('edit_profilePhotoCamera'); if(cam) cam.value='';
-              const gal = document.getElementById('edit_profilePhotoGallery'); if(gal) gal.value='';
             }catch(e){ console.error(e); showCustomAlert('Error saving profile');
               document.querySelector('#editProfileSaveBtn').disabled=false;
               document.querySelector('#editProfileSaveBtn').innerText='Save'; }
@@ -384,12 +363,7 @@ function updateProfileBubble(){
               <label style="font-weight:700">User ID (readonly)</label>
               <input id="edit_userid" value="${escapeHtml(id)}" readonly style="width:100%;background:#f7f7f7"/>
               <label style="font-weight:700">Change photo (optional)</label>
-              <div style="display:flex;align-items:center;gap:8px;">
-                <button type="button" onclick="openPhotoChooser('edit')">Choose photo</button>
-                <div id="editProfilePreview" style="width:56px;height:56px;border-radius:50%;overflow:hidden;background:#f0f0f0;display:flex;align-items:center;justify-content:center;">${photoHtml}</div>
-              </div>
-              <input type="file" id="edit_profilePhotoCamera" accept="image/*" capture="environment" style="display:none" />
-              <input type="file" id="edit_profilePhotoGallery" accept="image/*" style="display:none" />
+              <input type="file" id="edit_profilePhoto" accept="image/*" capture="environment" />
               <div style="display:flex;gap:8px;margin-top:8px;">
                 <button id="editProfileSaveBtn" onclick="(function(btn){btn.disabled=true;btn.innerText='Saving...';saveProfileEdits();})(this)">Save</button>
                 <button onclick="cancelEditProfile()" style="background:#fff;color:var(--accent);border:1px solid var(--accent)">Cancel</button>
@@ -397,13 +371,6 @@ function updateProfileBubble(){
             </div>
           </div>
         `;
-        // attach listeners to the newly injected file inputs
-        try {
-          const cam = document.getElementById('edit_profilePhotoCamera');
-          const gal = document.getElementById('edit_profilePhotoGallery');
-          if(cam) cam.addEventListener('change', function(e){ if(e.target.files && e.target.files[0]){ selectedEditPhotoFile = e.target.files[0]; showPreview('editProfilePreview', selectedEditPhotoFile); closePhotoChooser(); }});
-          if(gal) gal.addEventListener('change', function(e){ if(e.target.files && e.target.files[0]){ selectedEditPhotoFile = e.target.files[0]; showPreview('editProfilePreview', selectedEditPhotoFile); closePhotoChooser(); }});
-        } catch(e){}
       } else {
         document.getElementById("profileContent").innerHTML = `
           <div class="profileBig">
@@ -698,43 +665,6 @@ function resetScreens() {
       typingTimeouts[roomId] = setTimeout(()=>{ setTypingFlag(roomId, false); }, 2000);
     }
 
-    // ----- NEW: photo chooser UI helpers -----
-    function openPhotoChooser(mode){
-      currentPhotoChooserMode = mode; // either 'register' or 'edit'
-      const modal = document.getElementById('photoChooser');
-      if(modal) modal.style.display = 'flex';
-    }
-    function closePhotoChooser(){
-      const modal = document.getElementById('photoChooser');
-      if(modal) modal.style.display = 'none';
-      currentPhotoChooserMode = null;
-    }
-    function chooseCamera(){
-      if(currentPhotoChooserMode === 'register'){
-        const el = document.getElementById('profilePhotoCamera'); if(el) el.click();
-      } else {
-        const el = document.getElementById('edit_profilePhotoCamera'); if(el) el.click();
-      }
-    }
-    function chooseGallery(){
-      if(currentPhotoChooserMode === 'register'){
-        const el = document.getElementById('profilePhotoGallery'); if(el) el.click();
-      } else {
-        const el = document.getElementById('edit_profilePhotoGallery'); if(el) el.click();
-      }
-    }
-    function showPreview(previewId, file){
-      try{
-        const preview = document.getElementById(previewId);
-        if(!preview) return;
-        const reader = new FileReader();
-        reader.onload = function(e){
-          preview.innerHTML = '<img src="'+e.target.result+'" style="width:100%;height:100%;object-fit:cover;" />';
-        };
-        reader.readAsDataURL(file);
-      }catch(e){}
-    }
-
     window.onload = function () {
       const saved = localStorage.getItem("chatUser");
       if (saved) {
@@ -783,15 +713,6 @@ function resetScreens() {
         if (!currentActiveRoom) return;
         setTypingFlag(currentActiveRoom, false);
       });
-
-      // attach register hidden inputs change listeners
-      try {
-        const cam = document.getElementById('profilePhotoCamera');
-        const gal = document.getElementById('profilePhotoGallery');
-        if(cam) cam.addEventListener('change', function(e){ if(e.target.files && e.target.files[0]){ selectedRegisterPhotoFile = e.target.files[0]; showPreview('profilePreview', selectedRegisterPhotoFile); closePhotoChooser(); }});
-        if(gal) gal.addEventListener('change', function(e){ if(e.target.files && e.target.files[0]){ selectedRegisterPhotoFile = e.target.files[0]; showPreview('profilePreview', selectedRegisterPhotoFile); closePhotoChooser(); }});
-      } catch(e){}
-
     };
   </script>
 
@@ -868,37 +789,12 @@ function resetScreens() {
   }
 }
 
-/* Photo chooser modal */
-.photoModal{
-  position:fixed;
-  left:0;top:0;right:0;bottom:0;
-  display:none;
-  align-items:center;
-  justify-content:center;
-  background:rgba(0,0,0,0.45);
-  z-index:12000;
-}
-.photoModal .box{
-  background:#fff;padding:18px;border-radius:14px;min-width:280px;text-align:center;box-shadow:0 14px 40px rgba(0,0,0,0.2);
-}
-.photoModal .box button{display:block;width:100%;margin-top:10px;padding:12px;border-radius:10px;border:1px solid #eee;background:#fff;color:var(--accent);font-weight:700;}
-.photoModal .box .cancel{background:#f6f6f6;color:#333;border:1px solid #ddd;}
-  </style>
+</style>
 </head>
 <body>
   <div id="notifBell"><span class="icon">🔔</span> <span id="notifCount"></span></div>
   <div id="notifDropdown"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div style="font-weight:800">Notifications</div><button id="markAllReadBtn" style="background:#fff;color:var(--accent);border:1px solid var(--accent);padding:6px 10px;border-radius:8px">Mark all read</button></div><div id="notifList"></div></div>
 
-  <!-- Photo chooser modal -->
-  <div id="photoChooser" class="photoModal" onclick="closePhotoChooser()">
-    <div class="box" onclick="event.stopPropagation()">
-      <div style="font-weight:800;margin-bottom:6px">Add profile photo</div>
-      <div style="font-size:13px;color:#666;margin-bottom:10px">Choose an option — camera or gallery</div>
-      <button onclick="chooseCamera()">📷 Take a photo (Camera)</button>
-      <button onclick="chooseGallery()">🖼️ Choose from gallery</button>
-      <button class="cancel" onclick="closePhotoChooser()">Cancel</button>
-    </div>
-  </div>
 
   <div id="step1" class="screen" style="display:block;">
     <h2>Step 1 — Login</h2>
@@ -915,14 +811,8 @@ function resetScreens() {
     <h2>Step 2 — Choose User ID</h2>
     <div style="display:flex;flex-direction:column;gap:8px;">
     <input id="userid" placeholder="User ID (unique)" style="width:100%" />
-    <label style="font-size:13px;color:#555">Profile photo (optional)</label>
-    <div style="display:flex;gap:12px;align-items:center;">
-      <button type="button" onclick="openPhotoChooser('register')">Choose photo</button>
-      <div id="profilePreview" style="width:56px;height:56px;border-radius:50%;overflow:hidden;background:#f0f0f0;display:flex;align-items:center;justify-content:center">👤</div>
-    </div>
-    <!-- hidden inputs used by the chooser -->
-    <input type="file" id="profilePhotoCamera" accept="image/*" capture="environment" style="display:none" />
-    <input type="file" id="profilePhotoGallery" accept="image/*" style="display:none" />
+    <label style="font-size:13px;color:#555">Upload profile photo (optional)</label>
+    <input type="file" id="profilePhoto" accept="image/*" capture="environment" style="margin-top:6px;" />
     </div>
     <div style="margin-top:12px;">
       <button onclick="finishRegister()">Finish & Go to Home</button>
@@ -996,3 +886,4 @@ function showCustomAlert(msg){
 
 </body>
 </html>
+
