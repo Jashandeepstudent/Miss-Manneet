@@ -7,7 +7,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
     import {
-      getDatabase, ref, set, onChildAdded, get, child, query, limitToLast,
+      getDatabase, ref, set, update, onChildAdded, get, child, query, limitToLast,
       
       onValue, onDisconnect, remove
     } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
@@ -420,8 +420,8 @@ function resetScreens() {
         <div style="margin-top:6px">${escapeHtml(notif.text)}</div>
         <div style="font-size:12px;color:#666;margin-top:8px">${escapeHtml(time)}</div>
         <div style="margin-top:8px;display:flex;gap:8px;">
-          <button onclick="(function(){ openChatRoom('${notif.fromId || ""}','${escapeJs(notif.from)}'); (function(btn){ btn.closest('.notifPopup').remove(); markNotifRead(notifKey); })(this); })()">Open</button>
-          <button onclick="(function(btn){ btn.closest('.notifPopup').remove(); markNotifRead(notifKey); })(this)">Dismiss</button>
+          <button onclick="(function(){ openChatRoom('${notif.fromId || ""}','${escapeJs(notif.from)}'); this.closest('.notifPopup').remove(); })()">Open</button>
+          <button onclick="this.closest('.notifPopup').remove()">Dismiss</button>
         </div>
       `;
       document.body.appendChild(popup);
@@ -565,40 +565,86 @@ function resetScreens() {
 
       // load messages and subscribe
       const messagesRef = ref(db, "chats/" + currentActiveRoom);
-      onChildAdded(messagesRef, async (snapshot) => {
-        const msg = snapshot.val();
-        const ts = msg.ts || Number(snapshot.key) || Date.now();
-        const time = new Date(ts).toLocaleString();
-        const div = document.createElement("div");
-        const me = msg.user === currentUser.username;
-        div.className = "msgRow " + (me ? "me" : "them");
+      
+onChildAdded(messagesRef, async (snapshot) => {
+  try {
+    const msg = snapshot.val();
+    const ts = msg.ts || Number(snapshot.key) || Date.now();
+    const time = new Date(ts).toLocaleString();
+    const div = document.createElement("div");
+    const me = msg.user === currentUser.username;
+    div.className = "msgRow " + (me ? "me" : "them");
 
-        // compute ticks: check reads for this room
-        let isRead = false;
-        try {
-          const readsSnap = await get(child(dbRef, "reads/" + currentActiveRoom));
-          if (readsSnap.exists()) {
-            const reads = readsSnap.val();
-            // mateId is the one that's not currentUser in roomId
-            const mateIdFromRoom = currentActiveRoom.split('_').find(id=>id!==currentUser.userid);
-            if (reads && mateIdFromRoom && reads[mateIdFromRoom] && Number(reads[mateIdFromRoom]) >= Number(ts)) {
-              isRead = true;
-            }
-          }
-        } catch(e){}
-
-        // show message text and ticks (for messages I sent)
-        const ticksHtml = me ? `<div class="msgTicks">${ isRead ? '✔✔' : '✔' }</div>` : '';
-        // avatar (use msg.photo if present)
-        let avatarHtml = (msg.photo && msg.photo.length) ? `<img src="${msg.photo}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;" />` : '👤';
-        if (me) {
-          div.innerHTML = `<div style="display:flex;align-items:center;justify-content:flex-end;gap:8px;"><div class="msgText">${escapeHtml(msg.text)}</div><div class="msgAvatar">${avatarHtml}</div></div><div class="msgTime">${escapeHtml(time)} ${ticksHtml}</div>`;
-        } else {
-          div.innerHTML = `<div style="display:flex;align-items:center;gap:12px;"><div class="msgAvatar">${avatarHtml}</div><div><div class="msgText"><strong>${escapeHtml(msg.user)}</strong>: ${escapeHtml(msg.text)}</div><div class="msgTime">${escapeHtml(time)}</div></div></div>`;
+    let isRead = false;
+    try {
+      const readsSnap = await get(child(dbRef, "reads/" + currentActiveRoom));
+      if (readsSnap.exists()) {
+        const reads = readsSnap.val();
+        const mateIdFromRoom = currentActiveRoom.split('_').find(id => id !== currentUser.userid);
+        if (reads && mateIdFromRoom && reads[mateIdFromRoom] && Number(reads[mateIdFromRoom]) >= Number(ts)) {
+          isRead = true;
         }
-        chatBox.appendChild(div);
-        chatBox.scrollTop = chatBox.scrollHeight;
-      });
+      }
+    } catch(e) {}
+
+    const ticksHtml = me ? `<div class="msgTicks">${isRead ? '✔✔' : '✔'}</div>` : '';
+    let avatarHtml = (msg.photo && msg.photo.length) ? 
+      `<img src="${msg.photo}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;" />` : '👤';
+
+    div.innerHTML = `
+      <div style="display:flex;align-items:center;${me ? 'justify-content:flex-end;gap:8px;' : 'gap:12px;'}">
+        ${me ? '' : `<div class='msgAvatar'>${avatarHtml}</div>`}
+        <div>
+          <div class="msgText" id="msg_${ts}"><strong>${escapeHtml(msg.user)}</strong>: ${escapeHtml(msg.text)}</div>
+          <div class="msgTime">${escapeHtml(time)} ${ticksHtml}
+            <button class="msgEditBtn" onclick="editMessage('${currentActiveRoom}', '${ts}', '${escapeJs(msg.text)}')">✏️</button>
+            <button class="msgDeleteBtn" onclick="deleteMessage('${currentActiveRoom}', '${ts}')">🗑️</button>
+          </div>
+        </div>
+        ${me ? `<div class='msgAvatar'>${avatarHtml}</div>` : ''}
+      </div>
+    `;
+    chatBox.appendChild(div);
+    chatBox.scrollTop = chatBox.scrollHeight;
+  } catch (err) {
+    console.error('onChildAdded handler error', err);
+  }
+});
+
+
+
+// Edit / Delete helpers (inserted safely inside module script)
+window.editMessage = async function(roomId, msgId, oldText) {
+  try {
+    const newText = prompt("Edit message:", oldText);
+    if (newText === null || newText.trim() === "") return;
+    await update(ref(db, "chats/" + roomId + "/" + msgId), { text: newText });
+    const el = document.getElementById("msg_" + msgId);
+    if (el) el.innerText = newText;
+    showCustomAlert("Message edited");
+  } catch(e) {
+    console.error('editMessage error', e);
+    alert("Error editing message: " + (e && e.message ? e.message : e));
+  }
+};
+
+window.deleteMessage = async function(roomId, msgId) {
+  try {
+    if (!confirm("Delete this message?")) return;
+    await remove(ref(db, "chats/" + roomId + "/" + msgId));
+    const el = document.getElementById("msg_" + msgId);
+    if (el && el.closest) {
+      const row = el.closest(".msgRow");
+      if (row) row.remove();
+    }
+    showCustomAlert("Message deleted");
+  } catch(e) {
+    console.error('deleteMessage error', e);
+    alert("Error deleting message: " + (e && e.message ? e.message : e));
+  }
+};
+
+
 
       document.getElementById("sendBtn").onclick = async () => {
         const text = document.getElementById("message").value.trim();
