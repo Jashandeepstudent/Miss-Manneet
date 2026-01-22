@@ -1,0 +1,1511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Birthday Surprise 💖</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #ffeef8 0%, #ffe0f0 50%, #ffd4e8 100%);
+            overflow-x: hidden;
+        }
+
+        .hearts {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .heart {
+            position: absolute;
+            font-size: 20px;
+            animation: float 8s infinite;
+            opacity: 0.6;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(100vh) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.6;
+            }
+            90% {
+                opacity: 0.6;
+            }
+            100% {
+                transform: translateY(-100px) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 30px;
+            padding: 60px 50px;
+            box-shadow: 0 20px 60px rgba(255, 105, 180, 0.3);
+            max-width: 600px;
+            width: 90%;
+            min-height: 400px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border: 3px solid #ffb3d9;
+        }
+
+        .opening-animation {
+            text-align: center;
+            animation: fadeInScale 2s ease-out;
+        }
+
+        @keyframes fadeInScale {
+            0% {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .opening-animation h1 {
+            font-size: 48px;
+            color: #ff69b4;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(255, 105, 180, 0.3);
+        }
+
+        .sparkle {
+            font-size: 60px;
+            display: inline-block;
+            animation: sparkle 1.5s infinite;
+        }
+
+        @keyframes sparkle {
+            0%, 100% {
+                transform: scale(1) rotate(0deg);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.2) rotate(180deg);
+                opacity: 0.8;
+            }
+        }
+
+        .typing-text {
+            font-size: 24px;
+            color: #ff1493;
+            margin: 30px 0;
+            min-height: 60px;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .cursor {
+            display: inline-block;
+            width: 3px;
+            height: 24px;
+            background: #ff1493;
+            margin-left: 2px;
+            animation: blink 0.7s infinite;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        .button-container {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 20px;
+            opacity: 0;
+            animation: fadeInUp 0.6s ease-out forwards;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        button {
+            padding: 15px 40px;
+            font-size: 18px;
+            border: none;
+            border-radius: 25px;
+            background: linear-gradient(135deg, #ff69b4 0%, #ff1493 100%);
+            color: white;
+            cursor: pointer;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(255, 105, 180, 0.4);
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 6px 20px rgba(255, 105, 180, 0.6);
+        }
+
+        button:active {
+            transform: translateY(-1px);
+        }
+
+        .birthday-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0);
+            z-index: 9998;
+            animation: overlayFade 0.8s ease-out forwards;
+        }
+
+        @keyframes overlayFade {
+            to {
+                background: rgba(0, 0, 0, 0.6);
+            }
+        }
+
+        .birthday-popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0) rotate(-180deg);
+            background: linear-gradient(135deg, #fff 0%, #ffebf5 100%);
+            padding: 60px 80px;
+            border-radius: 40px;
+            text-align: center;
+            z-index: 9999;
+            box-shadow: 0 30px 90px rgba(255, 20, 147, 0.5);
+            border: 5px solid #ff69b4;
+            animation: epicPopupAppear 1.2s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+            min-width: 400px;
+        }
+
+        @keyframes epicPopupAppear {
+            0% {
+                transform: translate(-50%, -50%) scale(0) rotate(-180deg);
+                opacity: 0;
+            }
+            70% {
+                transform: translate(-50%, -50%) scale(1.1) rotate(10deg);
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(1) rotate(0deg);
+                opacity: 1;
+            }
+        }
+
+        .birthday-popup h2 {
+            font-size: 56px;
+            background: linear-gradient(45deg, #ff1493, #ff69b4, #ffd700, #ff1493);
+            background-size: 300% 300%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 20px;
+            animation: gradientShift 3s ease infinite, bounce 1s ease infinite;
+            font-weight: 800;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .birthday-popup p {
+            font-size: 36px;
+            color: #ff1493;
+            font-weight: 700;
+            animation: pulse 1.5s ease infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .cake-animation {
+            font-size: 80px;
+            margin: 20px 0;
+            animation: cakeSpin 2s ease infinite;
+        }
+
+        @keyframes cakeSpin {
+            0%, 100% { transform: rotate(-5deg) scale(1); }
+            25% { transform: rotate(5deg) scale(1.1); }
+            50% { transform: rotate(-5deg) scale(1); }
+            75% { transform: rotate(5deg) scale(1.1); }
+        }
+
+        .game-container {
+            width: 100%;
+            text-align: center;
+        }
+
+        .game-menu {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .game-btn {
+            padding: 20px;
+            font-size: 16px;
+            background: linear-gradient(135deg, #ff69b4, #ff1493);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(255, 105, 180, 0.4);
+        }
+
+        .game-btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(255, 105, 180, 0.6);
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="hearts" id="hearts"></div>
+    
+    <div class="container" id="container">
+        <div class="opening-animation" id="opening">
+            <h1><span class="sparkle">✨</span> Hello Beautiful! <span class="sparkle">✨</span></h1>
+            <p style="font-size: 24px; color: #ff69b4; margin-top: 20px;">💖 Welcome 💖</p>
+        </div>
+    </div>
+
+    <script>
+        function createHearts() {
+            const heartsContainer = document.getElementById('hearts');
+            for (let i = 0; i < 15; i++) {
+                const heart = document.createElement('div');
+                heart.className = 'heart';
+                heart.innerHTML = '💖';
+                heart.style.left = Math.random() * 100 + '%';
+                heart.style.animationDelay = Math.random() * 8 + 's';
+                heart.style.fontSize = (Math.random() * 20 + 15) + 'px';
+                heartsContainer.appendChild(heart);
+            }
+        }
+        createHearts();
+
+        function typeText(text, element, speed = 50) {
+            return new Promise(resolve => {
+                let i = 0;
+                element.innerHTML = '';
+                const cursor = document.createElement('span');
+                cursor.className = 'cursor';
+                
+                const interval = setInterval(() => {
+                    if (i < text.length) {
+                        element.innerHTML = text.substring(0, i + 1);
+                        element.appendChild(cursor);
+                        i++;
+                    } else {
+                        clearInterval(interval);
+                        cursor.remove();
+                        resolve();
+                    }
+                }, speed);
+            });
+        }
+
+        function showButtons(buttons) {
+            const btnContainer = document.createElement('div');
+            btnContainer.className = 'button-container';
+            
+            buttons.forEach(btn => {
+                const button = document.createElement('button');
+                button.textContent = btn.text;
+                button.onclick = btn.action;
+                btnContainer.appendChild(button);
+            });
+            
+            container.appendChild(btnContainer);
+        }
+
+        function clearContent() {
+            container.innerHTML = '';
+        }
+
+        function createEpicBirthdayPopup() {
+            const overlay = document.createElement('div');
+            overlay.className = 'birthday-overlay';
+            document.body.appendChild(overlay);
+
+            const popup = document.createElement('div');
+            popup.className = 'birthday-popup';
+            popup.innerHTML = `
+                <h2>🎉 HAPPY BIRTHDAY 🎉</h2>
+                <div class="cake-animation">🎂</div>
+                <p>Nancy Di Mummy! 💖</p>
+            `;
+            document.body.appendChild(popup);
+            
+            for (let i = 0; i < 150; i++) {
+                setTimeout(() => {
+                    const confetti = document.createElement('div');
+                    confetti.style.position = 'fixed';
+                    confetti.style.width = '15px';
+                    confetti.style.height = '15px';
+                    confetti.style.left = Math.random() * 100 + '%';
+                    confetti.style.top = '-20px';
+                    confetti.style.background = ['#ff69b4', '#ff1493', '#ffb3d9', '#ffd700', '#ff6b9d', '#c71585'][Math.floor(Math.random() * 6)];
+                    confetti.style.zIndex = '10000';
+                    confetti.style.animation = `confettiFall ${2 + Math.random() * 2}s linear`;
+                    document.body.appendChild(confetti);
+                    setTimeout(() => confetti.remove(), 4000);
+                }, i * 10);
+            }
+
+            for (let i = 0; i < 50; i++) {
+                setTimeout(() => {
+                    const heart = document.createElement('div');
+                    heart.innerHTML = ['💖', '💕', '💗', '💓', '💝'][Math.floor(Math.random() * 5)];
+                    heart.style.position = 'fixed';
+                    heart.style.fontSize = '30px';
+                    heart.style.left = Math.random() * 100 + '%';
+                    heart.style.top = '100%';
+                    heart.style.zIndex = '10000';
+                    heart.style.animation = 'heartFloat 4s ease-out forwards';
+                    document.body.appendChild(heart);
+                    setTimeout(() => heart.remove(), 4000);
+                }, i * 30);
+            }
+            
+            setTimeout(() => {
+                overlay.remove();
+                popup.remove();
+                step6();
+            }, 4000);
+        }
+function initializeApp() {
+            if (localStorage.getItem('introSeen') === 'true') {
+                // If they've seen it, skip the drama and go to the menu
+                showGamesMenu();
+            } else {
+                // First time visit
+                step1();
+            }
+        }
+        const container = document.getElementById('container');
+
+async function step1() {
+            // Give them a moment to see the "Hello Beautiful" greeting
+            setTimeout(() => {
+                clearContent();
+                const textDiv = document.createElement('div');
+                textDiv.className = 'typing-text';
+                container.appendChild(textDiv);
+                
+                typeText('Hmmm... Who are you? 🤔', textDiv, 60).then(() => {
+                    setTimeout(() => {
+                        typeText(' 🤔\nManneet?', textDiv, 60).then(() => {
+                            showButtons([
+                                { text: 'Yes', action: step2 }
+                            ]);
+                        });
+                    }, 800);
+                });
+            }, 3000);
+        }
+
+        async function step2() {
+            clearContent();
+            const textDiv = document.createElement('div');
+            textDiv.className = 'typing-text';
+            container.appendChild(textDiv);
+            
+            await typeText('Do you know what is today? 🎀', textDiv, 60);
+            showButtons([
+                { text: 'No', action: step3 }
+            ]);
+        }
+
+        async function step3() {
+            clearContent();
+            const textDiv = document.createElement('div');
+            textDiv.className = 'typing-text';
+            container.appendChild(textDiv);
+            
+            await typeText("Today is birthday of Nancy Di Mummy! 🎂", textDiv, 60);
+            setTimeout(() => {
+                createEpicBirthdayPopup();
+            }, 1000);
+        }
+
+        async function step6() {
+            clearContent();
+            const textDiv = document.createElement('div');
+            textDiv.className = 'typing-text';
+            container.appendChild(textDiv);
+            
+            await typeText("Oops! You are Manneet and you already know about it! 😊", textDiv, 60);
+            showButtons([
+                { text: 'Yes', action: step7 }
+            ]);
+        }
+
+        async function step7() {
+            clearContent();
+            const textDiv = document.createElement('div');
+            textDiv.className = 'typing-text';
+            container.appendChild(textDiv);
+            
+            await typeText("Very well! Still... Happy Birthday! 🎉💖", textDiv, 60);
+            showButtons([
+                { text: 'Thank You', action: step8 }
+            ]);
+        }
+
+        async function step8() {
+            clearContent();
+            const textDiv = document.createElement('div');
+            textDiv.className = 'typing-text';
+            container.appendChild(textDiv);
+            
+            await typeText("Hmmmmmmmmmm... 🤔", textDiv, 100);
+            setTimeout(() => step9(), 1500);
+        }
+
+        async function step9() {
+            clearContent();
+            const textDiv = document.createElement('div');
+            textDiv.className = 'typing-text';
+            container.appendChild(textDiv);
+            
+            await typeText("Do you know one thing about Jashan? 💭", textDiv, 60);
+            showButtons([
+                { text: 'No?', action: step10 }
+            ]);
+        }
+
+        async function step10() {
+            clearContent();
+            const textDiv = document.createElement('div');
+            textDiv.className = 'typing-text';
+            container.appendChild(textDiv);
+            
+            await typeText("Jashan loves...", textDiv, 80);
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            await typeText("Jashan loves... Manneet 💕", textDiv, 80);
+            setTimeout(() => step11(), 1500);
+        }
+
+        async function step11() {
+            clearContent();
+            const textDiv = document.createElement('div');
+            textDiv.className = 'typing-text';
+            container.appendChild(textDiv);
+            
+            await typeText("Do you think she loves him too? 💖", textDiv, 60);
+            showButtons([
+                { text: 'Yes', action: step12Yes },
+                { text: 'No', action: step12No }
+            ]);
+        }
+
+        async function step12No() {
+            clearContent();
+            const textDiv = document.createElement('div');
+            textDiv.className = 'typing-text';
+            container.appendChild(textDiv);
+            
+            await typeText("Hmmm... 🤔", textDiv, 80);
+            setTimeout(() => step13(), 2000);
+        }
+
+        async function step12Yes() {
+            clearContent();
+            const textDiv = document.createElement('div');
+            textDiv.className = 'typing-text';
+            container.appendChild(textDiv);
+            
+            await typeText("Really? 😊", textDiv, 60);
+            showButtons([
+                { text: 'Yes', action: step13 }
+            ]);
+        }
+
+        async function step13() {
+            clearContent();
+            const textDiv = document.createElement('div');
+            textDiv.className = 'typing-text';
+            container.appendChild(textDiv);
+            
+            await typeText("Very Well! 💖", textDiv, 60);
+            setTimeout(() => showGamesMenu(), 1500);
+        }
+
+       async function showGamesMenu() {
+            // Once they reach the menu, we save that they have "seen" the intro
+            localStorage.setItem('introSeen', 'true');
+            
+            clearContent();
+            const textDiv = document.createElement('div');
+            textDiv.className = 'typing-text';
+            container.appendChild(textDiv);
+            
+            await typeText("Now let's have some fun! Choose a game to play! 🎮💕", textDiv, 60);
+            
+            const gameMenu = document.createElement('div');
+            gameMenu.className = 'game-menu';
+            gameMenu.innerHTML = `
+                <button class="game-btn" onclick="playHeartGame()">💖 Catch Hearts</button>
+                <button class="game-btn" onclick="playLoveQuiz()">❤️ Love Quiz</button>
+                <button class="game-btn" onclick="playLoveCalculator()">💕 Love Calculator</button>
+                <button class="game-btn" onclick="playFortuneCookie()">🥠 Fortune Cookie</button>
+                <button class="game-btn" onclick="playBouquetBuilder()">🌹 Build Bouquet</button>
+                <button class="game-btn" onclick="playGiftBox()">🎁 Gift Box</button>
+                <button class="game-btn" onclick="playWishCandles()">🕯️ Make a Wish</button>
+                <button class="game-btn" onclick="playReasonsCounter()">💝 Love Reasons</button>
+                <button class="game-btn" onclick="playConstellation()">⭐ Love Stars</button>
+             <button class="game-btn" 
+                onclick="window.location.href='index.html'" 
+                style="grid-column: span 2; background: linear-gradient(135deg, #4caf50, #2e7d32); margin-top: 10px;">
+                ✨ Meet Jashan! ✨
+        </button>
+            `;
+            container.appendChild(gameMenu);
+        }
+
+        // Helper to reset the intro if you want to see it again
+        function resetIntro() {
+            localStorage.removeItem('introSeen');
+            location.reload();
+        }
+
+      window.playHeartGame = async function() {
+    clearContent();
+    container.innerHTML = `
+        <h2 style="color: #ff1493; margin-bottom: 10px;">💖 Catch the Sweets! 💖</h2>
+        <div style="display: flex; justify-content: space-between; width: 100%; padding: 0 20px; margin-bottom: 10px;">
+            <p style="color: #ff69b4; font-size: 18px; font-weight: bold;">Score: <span id="score">0</span></p>
+            <button onclick="endHeartGame()" style="padding: 5px 15px; font-size: 14px; background: #ff4d94;">End Game 🏁</button>
+        </div>
+        <div id="gameArea" style="position: relative; width: 100%; height: 350px; background: #fff0f5; border-radius: 20px; overflow: hidden; border: 3px solid #ffb3d9; box-shadow: inset 0 0 20px rgba(255, 182, 193, 0.5);"></div>
+        <p style="margin-top: 10px; color: #ff69b4; font-size: 14px;">Catch the treats before they fall! 🎂💖</p>
+    `;
+    
+    let score = 0;
+    const gameArea = document.getElementById('gameArea');
+    const scoreDisplay = document.getElementById('score');
+    
+    // Array of different designs
+    const designs = ['💖', '💕', '💗', '💓', '💝', '🎂', '🧁', '🍰', '🍩', '🍪'];
+    
+    function createItem() {
+        if (!document.getElementById('gameArea')) return;
+
+        const item = document.createElement('div');
+        // Pick a random design
+        const randomDesign = designs[Math.floor(Math.random() * designs.length)];
+        item.innerHTML = randomDesign;
+        
+        item.style.position = 'absolute';
+        item.style.fontSize = randomDesign === '🎂' ? '45px' : '35px'; // Make cakes a bit bigger
+        item.style.left = Math.random() * 85 + '%';
+        item.style.top = '-60px';
+        item.style.cursor = 'pointer';
+        item.style.zIndex = '100';
+        item.style.transition = 'top 2.5s linear'; // Slightly faster for more challenge
+        item.style.userSelect = 'none';
+        
+        item.onclick = (e) => {
+            e.stopPropagation();
+            // Bonus points for cakes!
+            const points = (randomDesign === '🎂' || randomDesign === '🧁') ? 20 : 10;
+            score += points;
+            scoreDisplay.textContent = score;
+            
+            const burst = document.createElement('div');
+            burst.innerHTML = `+${points} ✨`;
+            burst.style.position = 'absolute';
+            burst.style.left = item.style.left;
+            burst.style.top = item.style.top;
+            burst.style.color = '#ff1493';
+            burst.style.fontWeight = 'bold';
+            burst.style.animation = 'fadeOut 0.8s forwards';
+            gameArea.appendChild(burst);
+            
+            item.remove();
+            setTimeout(() => burst.remove(), 800);
+        };
+        
+        gameArea.appendChild(item);
+        
+        setTimeout(() => {
+            if (item) item.style.top = '380px';
+        }, 50);
+
+        setTimeout(() => {
+            if (item && item.parentNode) item.remove();
+        }, 2550);
+    }
+    
+    // Global function so the button can access it
+    window.endHeartGame = function() {
+        clearInterval(window.heartGameInterval);
+        clearContent();
+        const textDiv = document.createElement('div');
+        textDiv.className = 'typing-text';
+        container.appendChild(textDiv);
+        
+        const finalMsg = score > 100 ? `Wow! You're a pro! 🌟` : `Sweet! 🍭`;
+        typeText(`Game Over! 🎮\nYour Score: ${score}\n${finalMsg}`, textDiv, 50).then(() => {
+            showButtons([
+                { text: 'Play Again 🔄', action: playHeartGame },
+                { text: 'Back to Menu 🏠', action: showGamesMenu }
+            ]);
+        });
+    };
+    
+    if (window.heartGameInterval) clearInterval(window.heartGameInterval);
+    window.heartGameInterval = setInterval(createItem, 500); // Faster spawning
+    
+    // Timer for auto-ending
+    window.gameTimer = setTimeout(() => {
+        if (document.getElementById('gameArea')) endHeartGame();
+    }, 20000); // Increased to 20 seconds
+};
+
+       window.playLoveQuiz = async function() {
+    clearContent();
+    const quiz = [
+        {q: "What's Jashan's favorite thing about Manneet?", a: ["Her smile 😊", "Her innocence & naivety! 💕"], correct: 1},
+        {q: "How does Jashan feel when he sees Manneet?", a: ["Happy 😃", "Like a man seeing a mad girl! 🌟"], correct: 1},
+        {q: "What does Manneet mean to Jashan?", a: ["A friend 👫", "His Nancy Di Mummy! 🌍💖"], correct: 1},
+        {q: "If Manneet is a star, what is Jashan?", a: ["The Moon 🌙", "The sky that holds her 🌌"], correct: 1},
+        {q: "What's the best part of their relationship?", a: ["Sharing secrets 🤫", "Being weird together! 🤪"], correct: 1},
+        {q: "Who is the 'Baatuni' (talkative) one?", a: ["Definitely Manneet! 🗣️", "Jashan🦜"], correct: 0},
+        {q: "What's the secret to their bond?", a: ["Trust 🤝", "Pure Infinite Love! ♾️❤️"], correct: 1},
+        {q: "Who is the boss of this relationship?", a: ["Jashan 😎", "Obviously Manneet! 👑"], correct: 1}
+    ];
+    
+    let currentQ = 0;
+    let score = 0;
+    
+    function showQuestion() {
+        clearContent();
+        
+        // Progress header
+        const progress = document.createElement('p');
+        progress.style.color = '#ff69b4';
+        progress.style.fontSize = '14px';
+        progress.innerHTML = `Question ${currentQ + 1} of ${quiz.length}`;
+        container.appendChild(progress);
+
+        const textDiv = document.createElement('div');
+        textDiv.className = 'typing-text';
+        container.appendChild(textDiv);
+        
+        typeText(quiz[currentQ].q, textDiv, 40).then(() => {
+            showButtons(quiz[currentQ].a.map((answer, idx) => ({
+                text: answer,
+                action: () => {
+                    if (idx === quiz[currentQ].correct) {
+                        score++;
+                    }
+                    
+                    currentQ++;
+                    if (currentQ < quiz.length) {
+                        showQuestion();
+                    } else {
+                        showQuizResults();
+                    }
+                }
+            })));
+        });
+    }
+
+    function showQuizResults() {
+        clearContent();
+        const textDiv = document.createElement('div');
+        textDiv.className = 'typing-text';
+        container.appendChild(textDiv);
+
+        let rank = "";
+        if (score === quiz.length) rank = "Soulmates Forever! ♾️💖";
+        else if (score >= 5) rank = "Incredible Bond! ✨";
+        else rank = "Sweet Friends! 😊";
+
+        typeText(`Quiz Finished! 📝\nYour Score: ${score}/${quiz.length}\n${rank}`, textDiv, 50).then(() => {
+            showButtons([
+                { text: 'Try Again 🔄', action: playLoveQuiz },
+                { text: 'Back to Menu 🏠', action: showGamesMenu }
+            ]);
+        });
+    }
+
+    showQuestion();
+};
+      window.playLoveCalculator = async function() {
+    clearContent();
+    const textDiv = document.createElement('div');
+    textDiv.className = 'typing-text';
+    container.appendChild(textDiv);
+    
+    // Create a special div for the big counting number
+    const counterDisplay = document.createElement('div');
+    counterDisplay.style.fontSize = '80px';
+    counterDisplay.style.fontWeight = '800';
+    counterDisplay.style.margin = '20px 0';
+    counterDisplay.style.background = 'linear-gradient(45deg, #ff1493, #ff69b4)';
+    counterDisplay.style.webkitBackgroundClip = 'text';
+    counterDisplay.style.webkitTextFillColor = 'transparent';
+    counterDisplay.innerHTML = '0%';
+    
+    await typeText("Analyzing Jashan & Manneet's Compatibility... 🔍💕", textDiv, 50);
+    container.appendChild(counterDisplay);
+    
+    // Counting Logic
+    let currentPercent = 0;
+    const countInterval = setInterval(() => {
+        // Increase speed as it gets higher
+        if (currentPercent < 90) {
+            currentPercent += Math.floor(Math.random() * 5) + 1;
+        } else if (currentPercent < 100) {
+            currentPercent += 1;
+        } else {
+            // Once it hits 100, we trigger the "Infinite" reveal
+            clearInterval(countInterval);
+            setTimeout(() => {
+                counterDisplay.style.fontSize = '100px';
+                counterDisplay.innerHTML = '∞%';
+                counterDisplay.style.animation = 'pulse 0.5s ease infinite';
+                
+                // Update text below
+                textDiv.innerHTML = "Result: INFINITE LOVE! ♾️💖<br><span style='font-size: 18px; color: #ff69b4;'>Calculation broke because it's too much!</span>";
+                
+                showButtons([{text: "Amazing! 💕", action: showGamesMenu}]);
+            }, 500);
+            return;
+        }
+        counterDisplay.innerHTML = currentPercent + '%';
+    }, 40); // 40ms for a smooth, fast look
+};
+
+       window.playFortuneCookie = async function() {
+    clearContent();
+    let clicks = 0;
+    const maxClicks = 10;
+    
+    runGameSession(true); // Start with Cookie
+
+    function runGameSession(isCookieSession) {
+        clicks = 0;
+        clearContent();
+        
+        container.innerHTML = `
+            <h2 id="title" style="color: #ff1493; margin-bottom: 10px; font-weight: 800;">
+                ${isCookieSession ? '🥠 The Magic Cookie 🥠' : '🎂 The Grand Cake 🎂'}
+            </h2>
+            <p id="instruction" style="color: #ff69b4; font-weight: 600;">
+                ${isCookieSession ? 'Crack it open for a fortune!' : 'Time to cut the cake!'}
+            </p>
+            
+            <div id="wrapper" style="position: relative; cursor: pointer; display: inline-block; margin: 40px 0; user-select: none;">
+                <div id="mainItem" style="font-size: 110px; transition: all 0.1s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative; display: flex; justify-content: center; align-items: center;">
+                    <span id="emojiBody">${isCookieSession ? '🥠' : '🎂'}</span>
+                    <div id="crackOverlay" style="position: absolute; font-size: 80px; opacity: 0; pointer-events: none; color: #5d4037; font-weight: bold;"></div>
+                </div>
+                
+                <div id="tool" style="position: absolute; top: -30px; right: -50px; font-size: 60px; pointer-events: none; opacity: 0; transition: all 0.1s; z-index: 10; filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.2));">
+                    ${isCookieSession ? '🔨' : '🔪'}
+                </div>
+            </div>
+
+            <div id="fortune" style="margin-top: 20px; color: #ff1493; font-size: 24px; font-weight: bold; min-height: 40px; text-shadow: 1px 1px 2px rgba(255,105,180,0.2);"></div>
+            <div id="celebrationZone" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999;"></div>
+            <div id="finalAction" style="margin-top: 20px;"></div>
+        `;
+
+        const wrapper = document.getElementById('wrapper');
+        const mainItem = document.getElementById('mainItem');
+        const emojiBody = document.getElementById('emojiBody');
+        const crackOverlay = document.getElementById('crackOverlay');
+        const tool = document.getElementById('tool');
+        const fortuneDiv = document.getElementById('fortune');
+
+        wrapper.onclick = function() {
+            if (clicks >= maxClicks) return;
+            clicks++;
+
+            // 1. Better Tool Swing
+            tool.style.opacity = '1';
+            tool.style.transform = `translate(-40px, 40px) rotate(${isCookieSession ? '-30deg' : '-60deg'})`;
+            
+            // 2. Realistic "Crack" and "Squash" Animation
+            mainItem.style.transform = `scale(${1 - (clicks * 0.02)}, ${1 + (clicks * 0.01)})`;
+            
+            if (isCookieSession) {
+                // Show cracking lines increasing
+                crackOverlay.style.opacity = clicks / 10;
+                crackOverlay.innerHTML = clicks > 5 ? '⚡' : ''; 
+                emojiBody.style.filter = `sepia(${clicks * 10}%) brightness(${100 - clicks * 2}%)`;
+            } else {
+                // Cake cutting vibration
+                emojiBody.style.transform = `translateX(${Math.sin(clicks) * 5}px)`;
+            }
+
+            setTimeout(() => {
+                tool.style.transform = 'translate(0, 0) rotate(0deg)';
+            }, 100);
+
+            if (clicks === maxClicks) {
+                if (isCookieSession) finishCookie(mainItem, fortuneDiv);
+                else finishCake(mainItem, fortuneDiv);
+            }
+        };
+    }
+
+    function finishCookie(item, fortune) {
+        item.style.transform = "scale(1.5)";
+        item.innerHTML = '📜✨'; // Cookie "opens" into a scroll
+        fortune.innerHTML = "Fortune: 'A year of infinite smiles awaits!' 🎀";
+        
+        for(let i=0; i<30; i++) createParticle('✨', container);
+
+        // Reset to Cake after 3.5 seconds
+        setTimeout(() => {
+            runGameSession(false);
+        }, 3500);
+    }
+
+    function finishCake(item, fortune) {
+        item.innerHTML = '🍰💖';
+        fortune.innerHTML = "HAPPY BIRTHDAY NANCY DI MUMMY! 🎂";
+        
+        const zone = document.getElementById('celebrationZone');
+        const finalAction = document.getElementById('finalAction');
+        
+        // Massive Celebration
+        triggerEpicCelebration(zone);
+
+        // Add Finish Button after celebration starts
+        const finishBtn = document.createElement('button');
+        finishBtn.innerHTML = "✨ View Final Surprise ✨";
+        finishBtn.className = "game-btn"; // Uses your existing button style
+        finishBtn.onclick = () => showGamesMenu(); 
+        finalAction.appendChild(finishBtn);
+    }
+
+    function triggerEpicCelebration(zone) {
+        const colors = ['#ff69b4', '#ff1493', '#ffd700', '#00f2ff', '#70ff00'];
+        for(let i=0; i<120; i++) {
+            setTimeout(() => {
+                const c = document.createElement('div');
+                c.style.cssText = `position:absolute; width:12px; height:12px; background:${colors[Math.floor(Math.random()*5)]}; left:${Math.random()*100}%; top:-20px; border-radius:3px;`;
+                zone.appendChild(c);
+                c.animate([
+                    { transform: `translateY(0) rotate(0)`, opacity: 1 },
+                    { transform: `translateY(100vh) rotate(${Math.random()*1000}deg)`, opacity: 0 }
+                ], { duration: 2500 + Math.random()*2000 });
+                setTimeout(() => c.remove(), 4000);
+            }, i * 15);
+        }
+    }
+
+    function createParticle(char, parent) {
+        const p = document.createElement('div');
+        p.innerHTML = char;
+        p.style.cssText = `position:absolute; left:50%; top:50%; pointer-events:none; font-size:25px; z-index:100;`;
+        parent.appendChild(p);
+        const destX = (Math.random() - 0.5) * 400;
+        const destY = (Math.random() - 0.5) * 400;
+        p.animate([
+            { transform: 'translate(0,0) scale(1)', opacity: 1 },
+            { transform: `translate(${destX}px, ${destY}px) scale(0)`, opacity: 0 }
+        ], { duration: 1200 }).onfinish = () => p.remove();
+    }
+};
+
+      window.playBouquetBuilder = async function() {
+    clearContent();
+    let flowerCount = 0;
+    
+    const styleSheet = document.createElement("style");
+    styleSheet.innerText = `
+        .bouquet-scene { perspective: 1000px; position: relative; width: 320px; height: 450px; margin: 0 auto; }
+        .wrapping-paper { position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); width: 220px; height: 340px; background: linear-gradient(135deg, #fce4ec 0%, #f8bbd0 100%); clip-path: polygon(10% 0%, 90% 0%, 100% 100%, 0% 100%); z-index: 1; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.1)); }
+        .tissue-paper { position: absolute; bottom: 60px; left: 50%; transform: translateX(-50%) rotate(5deg); width: 200px; height: 280px; background: rgba(255,255,255,0.6); clip-path: polygon(20% 0%, 80% 0%, 100% 100%, 0% 100%); z-index: 2; }
+        .stem-bundle { position: absolute; width: 100%; height: 100%; z-index: 3; filter: blur(0.5px); }
+        .flower-head { cursor: grab; filter: drop-shadow(4px 6px 8px rgba(0,0,0,0.2)); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .flower-head:active { cursor: grabbing; transform: scale(1.1); }
+        .ribbon-bow { position: absolute; bottom: 50px; left: 50%; transform: translateX(-50%); width: 80px; z-index: 50; pointer-events: none; }
+        @keyframes petalBloom { from { transform: scale(0) rotate(-20deg); opacity: 0; } to { transform: scale(1) rotate(0deg); opacity: 1; } }
+    `;
+    document.head.appendChild(styleSheet);
+
+    container.innerHTML = `
+        <h2 style="color: #ff1493; margin-bottom: 5px; font-weight: 900; letter-spacing: -1px;">PREMIUM FLORAL STUDIO</h2>
+        <p style="color: #ff69b4; font-size: 12px; margin-bottom: 15px; font-style: italic;">Arranging a Masterpiece for Manneet</p>
+        
+        <div class="bouquet-scene">
+            <div class="wrapping-paper"></div>
+            <div class="tissue-paper"></div>
+            <div id="stemArea" class="stem-bundle"></div>
+            <div id="flowerHeadArea" style="position: absolute; width: 100%; height: 100%; z-index: 10;"></div>
+            <svg class="ribbon-bow" viewBox="0 0 100 60">
+                <path d="M10,30 Q30,0 50,30 Q70,0 90,30 L70,60 L50,40 L30,60 Z" fill="#ff1493" stroke="#c71585" stroke-width="2"/>
+                <circle cx="50" cy="30" r="8" fill="#ff69b4"/>
+            </svg>
+        </div>
+
+        <div style="background: white; padding: 15px; border-radius: 25px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); width: 100%; margin-top: 15px;">
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+                <button onclick="buildFlower('rose')" style="background:#e91e63; font-size:11px;">🌹 Royal Rose</button>
+                <button onclick="buildFlower('sunflower')" style="background:#ffb300; font-size:11px;">🌻 Gold Sun</button>
+                <button onclick="buildFlower('tulip')" style="background:#ba68c8; font-size:11px;">🌷 Silk Tulip</button>
+                <button onclick="buildFlower('lily')" style="background:#f06292; font-size:11px;">🌸 Lily Star</button>
+                <button onclick="buildFlower('leaf')" style="background:#4caf50; font-size:11px;">🌿 Fern Leaf</button>
+                <button onclick="buildFlower('daisy')" style="background:#81d4fa; font-size:11px;">🌼 Sky Daisy</button>
+            </div>
+        </div>
+        
+        <button onclick="showGamesMenu()" style="margin-top: 20px; width: 100%; background: #333; color: white;">FINALISE ARRANGEMENT</button>
+    `;
+
+window.buildFlower = function(type) {
+    flowerCount++;
+    const stemArea = document.getElementById('stemArea');
+    const headArea = document.getElementById('flowerHeadArea');
+
+    const angle = (Math.random() * 100 - 50); 
+    const rad = angle * (Math.PI / 180);
+    const distance = 160 + Math.random() * 90;
+    const headX = 160 + distance * Math.sin(rad);
+    const headY = 400 - distance * Math.cos(rad);
+
+    // 1. Create High-Detail SVG Stem
+    const stem = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    stem.setAttribute("style", `position:absolute; width:100%; height:100%; pointer-events:none; z-index:${40-Math.floor(distance/10)}`);
+    const ctrlX = 160 + (headX - 160) * 0.4;
+    const ctrlY = 400 - (400 - headY) * 0.4;
+    stem.innerHTML = `<path d="M160,400 Q${ctrlX},${ctrlY} ${headX},${headY}" stroke="#2d5a27" stroke-width="4" fill="none" stroke-linecap="round" />`;
+    stemArea.appendChild(stem);
+
+    // 2. Premium SVG Floral Anatomy
+    const head = document.createElement('div');
+    head.className = 'flower-head';
+    
+    let svgMarkup = '';
+    const id = `flower_${flowerCount}`;
+
+    if (type === 'rose') {
+        svgMarkup = `
+        <svg viewBox="0 0 100 100">
+            <defs>
+                <radialGradient id="grad_${id}" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" style="stop-color:#ff5e7e" />
+                    <stop offset="100%" style="stop-color:#b0003a" />
+                </radialGradient>
+            </defs>
+            <path d="M50 20 C60 10 90 30 50 90 C10 30 40 10 50 20" fill="url(#grad_${id})" transform="rotate(0 50 50)"/>
+            <path d="M50 20 C60 10 90 30 50 90 C10 30 40 10 50 20" fill="url(#grad_${id})" transform="rotate(72 50 50)"/>
+            <path d="M50 20 C60 10 90 30 50 90 C10 30 40 10 50 20" fill="url(#grad_${id})" transform="rotate(144 50 50)"/>
+            <path d="M50 20 C60 10 90 30 50 90 C10 30 40 10 50 20" fill="url(#grad_${id})" transform="rotate(216 50 50)"/>
+            <path d="M50 20 C60 10 90 30 50 90 C10 30 40 10 50 20" fill="url(#grad_${id})" transform="rotate(288 50 50)"/>
+            <circle cx="50" cy="50" r="15" fill="#880e4f" opacity="0.8"/>
+            <path d="M50 35 Q65 50 50 65 Q35 50 50 35" fill="#ff80ab" />
+        </svg>`;
+    } else if (type === 'sunflower') {
+        svgMarkup = `
+        <svg viewBox="0 0 100 100">
+            ${Array.from({length: 16}).map((_, i) => `
+                <path d="M50 50 Q60 10 50 5 L 40 10 Q40 50 50 50" fill="#ffca28" stroke="#f57f17" stroke-width="0.5" transform="rotate(${i * 22.5} 50 50)"/>
+            `).join('')}
+            <circle cx="50" cy="50" r="18" fill="#3e2723"/>
+            <circle cx="50" cy="50" r="15" fill="#261405" stroke="#5d4037" stroke-width="1" stroke-dasharray="2,2"/>
+        </svg>`;
+    } else if (type === 'tulip') {
+        svgMarkup = `
+        <svg viewBox="0 0 100 100">
+            <path d="M30 80 Q30 20 50 10 Q70 20 70 80 Z" fill="#ce93d8" />
+            <path d="M30 80 Q10 40 40 20 L 50 40 L 60 20 Q90 40 70 80 Z" fill="#ab47bc" />
+            <path d="M40 80 Q50 30 60 80" fill="#8e24aa" opacity="0.5"/>
+        </svg>`;
+    } else if (type === 'lily') {
+        svgMarkup = `
+        <svg viewBox="0 0 100 100">
+            ${Array.from({length: 6}).map((_, i) => `
+                <path d="M50 50 L70 10 L30 10 Z" fill="#fce4ec" stroke="#f06292" transform="rotate(${i * 60} 50 50)"/>
+                <circle cx="50" cy="25" r="1.5" fill="#d81b60" transform="rotate(${i * 60} 50 50)"/>
+            `).join('')}
+            <circle cx="50" cy="50" r="5" fill="#fdd835"/>
+        </svg>`;
+    } else if (type === 'leaf') {
+        svgMarkup = `
+        <svg viewBox="0 0 100 100">
+            <path d="M50 90 Q90 50 50 10 Q10 50 50 90" fill="#2e7d32" />
+            <path d="M50 90 L50 10" stroke="#1b5e20" stroke-width="1.5" />
+            <path d="M50 70 L70 50 M50 50 L70 30 M50 70 L30 50 M50 50 L30 30" stroke="#aed581" stroke-width="1" />
+        </svg>`;
+    } else { // Daisy
+        svgMarkup = `
+        <svg viewBox="0 0 100 100">
+            ${Array.from({length: 12}).map((_, i) => `
+                <ellipse cx="50" cy="20" rx="6" ry="20" fill="white" stroke="#e0e0e0" transform="rotate(${i * 30} 50 50)"/>
+            `).join('')}
+            <circle cx="50" cy="50" r="12" fill="#fbc02d" stroke="#f9a825" stroke-width="1"/>
+        </svg>`;
+    }
+
+    head.innerHTML = svgMarkup;
+    head.style.cssText = `
+        position: absolute; left: ${headX - 35}px; top: ${headY - 35}px;
+        width: 70px; height: 70px; z-index: ${100 + flowerCount};
+        animation: petalBloom 0.8s forwards;
+    `;
+
+    headArea.appendChild(head);
+        
+        // Add sparkle
+        const spark = document.createElement('div');
+        spark.innerHTML = '✨';
+        spark.style.cssText = `position:absolute; left:${headX}px; top:${headY}px; z-index:200; animation:fadeOut 1s forwards;`;
+        container.appendChild(spark);
+        setTimeout(() => spark.remove(), 1000);
+    };
+};
+
+window.playGiftBox = async function() {
+    clearContent();
+    
+    // Store levels of gifts to loop through
+    const giftLevels = [
+        [
+            { emoji: '🌹', msg: 'A beautiful rose for a beautiful girl!', color: '#ff69b4', q: 'Does Jashan think you are the best?' },
+            { emoji: '🍫', msg: 'Sweet chocolates for a sweet person!', color: '#ba68c8', q: 'Are you ready for a sweet surprise?' },
+            { emoji: '🧸', msg: 'A cute teddy to keep you company!', color: '#ff8a65', q: 'Do you promise to keep this gift forever?' }
+        ],
+        [
+            { emoji: '💎', msg: 'A shining diamond for a bright soul!', color: '#4fc3f7', q: 'Is Manneet the smartest girl Jashan knows?' },
+            { emoji: '🍦', msg: 'Cool ice cream for the coolest girl!', color: '#fff176', q: 'Do you want to see something yummy?' },
+            { emoji: '👑', msg: 'A crown for the Queen of Jashan\'s heart!', color: '#ffd54f', q: 'Are you ready to rule the world?' }
+        ],
+        [
+            { emoji: '🎀', msg: 'A cute ribbon for a cute look!', color: '#f06292', q: 'Is Jashan your favorite person?' },
+            { emoji: '🍩', msg: 'A sweet donut for a sweet tooth!', color: '#ce93d8', q: 'Can you handle this much sweetness?' },
+            { emoji: '🎈', msg: 'A balloon to celebrate YOU!', color: '#ef5350', q: 'Are we having fun yet?' }
+        ]
+    ];
+
+    let currentLevel = 0;
+    let openedInLevel = 0;
+
+    function renderLevel(levelIdx) {
+        const gifts = giftLevels[levelIdx % giftLevels.length];
+        openedInLevel = 0;
+        
+        container.innerHTML = `
+            <h2 style="color: #ff1493; margin-bottom: 10px;">🎁 Surprise Box: Round ${levelIdx + 1} 🎁</h2>
+            <p id="giftStatus" style="color: #ff69b4; margin-bottom: 10px;">Pick a box to unlock your surprise!</p>
+            
+            <div id="giftDisplay" style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; margin: 30px 0;">
+                ${gifts.map((g, i) => `
+                    <div id="boxWrapper${i}" class="gift-box-shake" style="position: relative; width: 100px; height: 100px; cursor: pointer;" onclick="askToOpen(${i})">
+                        <div id="lid${i}" style="position: absolute; top: 0; width: 100%; height: 30%; background: ${g.color}; border: 3px solid #fff; border-radius: 5px; z-index: 2; transition: all 0.5s ease;"></div>
+                        <div style="position: absolute; bottom: 0; width: 100%; height: 75%; background: ${g.color}; border: 3px solid #fff; border-radius: 5px; z-index: 1;">
+                            <div style="position: absolute; left: 45%; width: 10%; height: 100%; background: rgba(255,255,255,0.3);"></div>
+                        </div>
+                        <div id="gift${i}" style="position: absolute; top: 20px; left: 25%; font-size: 50px; opacity: 0; z-index: 0; transition: all 0.5s ease;">${g.emoji}</div>
+                    </div>
+                `).join('')}
+            </div>
+
+            <div id="questionArea" style="min-height: 110px;"></div>
+            <p id="giftMsg" style="color: #ff1493; font-size: 18px; font-weight: bold; margin-top: 10px;"></p>
+            
+            <div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px;">
+                <button id="nextLevelBtn" style="display: none; background: #4caf50;" onclick="nextRound()">Next Round ➡️</button>
+                <button onclick="showGamesMenu()">🎮 Back to Menu</button>
+            </div>
+        `;
+
+        // Internal functions for the current round
+        window.askToOpen = function(idx) {
+            const box = document.getElementById(`boxWrapper${idx}`);
+            if (box.getAttribute('data-opened') === 'true') return;
+
+            const qArea = document.getElementById('questionArea');
+            document.getElementById('giftStatus').innerText = "Security Check! 🛡️";
+            
+            qArea.innerHTML = `
+                <div style="background: #fff0f5; padding: 15px; border-radius: 15px; border: 2px solid #ffb3d9; animation: fadeInUp 0.4s ease;">
+                    <p style="color: #ff1493; margin-bottom: 10px; font-size: 14px;">${gifts[idx].q}</p>
+                    <button onclick="performOpen(${idx})" style="padding: 5px 15px; font-size: 12px;">Yes! ✅</button>
+                    <button onclick="denyOpen()" style="padding: 5px 15px; font-size: 12px; background: #999;">No ❌</button>
+                </div>
+            `;
+        };
+
+        window.performOpen = function(idx) {
+            const box = document.getElementById(`boxWrapper${idx}`);
+            box.setAttribute('data-opened', 'true');
+            box.classList.remove('gift-box-shake'); // Stop shaking when opened
+            
+            document.getElementById('questionArea').innerHTML = "";
+            document.getElementById('giftStatus').innerText = "Opening... ✨";
+            
+            const lid = document.getElementById(`lid${idx}`);
+            const gift = document.getElementById(`gift${idx}`);
+            const msg = document.getElementById('giftMsg');
+
+            lid.style.transform = "translateY(-60px) rotate(-30deg)";
+            lid.style.opacity = "0";
+            
+            setTimeout(() => {
+                gift.style.opacity = "1";
+                gift.style.transform = "translateY(-45px) scale(1.3)";
+                msg.innerText = gifts[idx].msg;
+                createExplosion(idx);
+                
+                openedInLevel++;
+                if (openedInLevel === 3) {
+                    document.getElementById('giftStatus').innerText = "Level Complete! 🌟";
+                    document.getElementById('nextLevelBtn').style.display = "block";
+                } else {
+                    document.getElementById('giftStatus').innerText = "One more! Pick another box.";
+                }
+            }, 300);
+        };
+    }
+
+    window.nextRound = function() {
+        currentLevel++;
+        renderLevel(currentLevel);
+    };
+
+    window.denyOpen = function() {
+        alert("You must say YES to Manneet's special gift! 😊");
+    };
+
+    function createExplosion(idx) {
+        for (let i = 0; i < 15; i++) {
+            const p = document.createElement('div');
+            p.innerHTML = '✨';
+            p.style.position = 'absolute';
+            p.style.left = '50%';
+            p.style.top = '20%';
+            p.style.pointerEvents = 'none';
+            document.getElementById(`boxWrapper${idx}`).appendChild(p);
+            const x = (Math.random() - 0.5) * 150;
+            const y = (Math.random() - 0.5) * 150;
+            p.animate([{ transform: 'translate(0,0)', opacity: 1 }, { transform: `translate(${x}px, ${y}px)`, opacity: 0 }], { duration: 1000 }).onfinish = () => p.remove();
+        }
+    }
+
+    // Add CSS animation for shaking boxes
+    if (!document.getElementById('gift-styles')) {
+        const style = document.createElement('style');
+        style.id = 'gift-styles';
+        style.innerHTML = `
+            @keyframes boxShake {
+                0% { transform: rotate(0deg); }
+                25% { transform: rotate(3deg); }
+                50% { transform: rotate(0eg); }
+                75% { transform: rotate(-3deg); }
+                100% { transform: rotate(0deg); }
+            }
+            .gift-box-shake { animation: boxShake 0.5s infinite; }
+        `;
+        document.head.appendChild(style);
+    }
+
+    renderLevel(currentLevel);
+};
+
+       // ... previous code ...
+
+        window.playWishCandles = async function() {
+            clearContent();
+            let blownOut = 0;
+            container.innerHTML = `
+                <h2 style="color: #ff1493; margin-bottom: 20px;">🕯️ Make a Wish! 🕯️</h2>
+                <p style="color: #ff69b4; margin-bottom: 20px;">Click each candle to blow it out!</p>
+                <div id="candleContainer" style="font-size: 60px; margin: 30px 0; display: flex; gap: 10px; justify-content: center;">
+                    <span onclick="blow(this)" style="cursor:pointer">🕯️</span>
+                    <span onclick="blow(this)" style="cursor:pointer">🕯️</span>
+                    <span onclick="blow(this)" style="cursor:pointer">🕯️</span>
+                    <span onclick="blow(this)" style="cursor:pointer">🕯️</span>
+                    <span onclick="blow(this)" style="cursor:pointer">🕯️</span>
+                </div>
+                <button onclick="showGamesMenu()" style="margin-top: 20px;">🎮 Back to Games</button>
+            `;
+            
+            window.blow = function(elem) {
+                if (elem.innerHTML === '🕯️') {
+                    elem.innerHTML = '✨';
+                    blownOut++;
+                    if (blownOut === 5) {
+                        alert("All wishes sent to the universe! May they all come true for you! ✨💖");
+                    }
+                }
+            };
+        };
+
+        window.playReasonsCounter = async function() {
+            clearContent();
+            const reasons = [
+                "Your heart of gold 💛",
+                "The way you care for everyone 🌸",
+                "Your beautiful soul ✨",
+                "How you make Jashan feel special 💖",
+                "Your infectious happiness 😊",
+                "Because you are simply YOU! 👑"
+            ];
+            let current = 0;
+            
+            container.innerHTML = `
+                <h2 style="color: #ff1493; margin-bottom: 20px;">💝 Why Jashan Loves You 💝</h2>
+                <div id="reasonText" style="font-size: 24px; color: #ff1493; min-height: 80px; font-weight: 600;">Click to see a reason...</div>
+                <button id="nextReason" onclick="nextReason()" style="margin-top: 20px;">Next Reason ✨</button>
+                <br>
+                <button onclick="showGamesMenu()" style="margin-top: 20px;">🎮 Back to Games</button>
+            `;
+
+            window.nextReason = function() {
+                const display = document.getElementById('reasonText');
+                display.style.opacity = 0;
+                setTimeout(() => {
+                    display.innerHTML = reasons[current];
+                    display.style.opacity = 1;
+                    current = (current + 1) % reasons.length;
+                }, 300);
+            };
+        };
+
+      window.playConstellation = async function() {
+    clearContent();
+    
+    const levels = [
+        {
+            name: "M + J",
+            stars: [
+                // M
+                {x: 30, y: 150, group: 'M'}, {x: 30, y: 70, group: 'M'}, {x: 65, y: 110, group: 'M'}, {x: 100, y: 70, group: 'M'}, {x: 100, y: 150, group: 'M'},
+                // +
+                {x: 135, y: 110, group: 'plus'}, {x: 165, y: 110, group: 'plus'}, {x: 150, y: 95, group: 'plus'}, {x: 150, y: 125, group: 'plus'},
+                // J (Fixed with Top Dot/Bar)
+                {x: 190, y: 70, group: 'J'}, {x: 230, y: 70, group: 'J'}, {x: 210, y: 70, group: 'J'}, {x: 210, y: 140, group: 'J'}, {x: 190, y: 165, group: 'J'}, {x: 165, y: 150, group: 'J'}
+            ]
+        },
+        {
+            name: "LOVE",
+            stars: [
+                {x: 40, y: 70, group: 'L'}, {x: 40, y: 150, group: 'L'}, {x: 80, y: 150, group: 'L'},
+                {x: 110, y: 110, group: 'O'}, {x: 130, y: 70, group: 'O'}, {x: 150, y: 110, group: 'O'}, {x: 130, y: 150, group: 'O'}, {x: 110, y: 110, group: 'O'},
+                {x: 180, y: 70, group: 'V'}, {x: 205, y: 150, group: 'V'}, {x: 230, y: 70, group: 'V'},
+                {x: 285, y: 70, group: 'E'}, {x: 255, y: 70, group: 'E'}, {x: 255, y: 110, group: 'E'}, {x: 280, y: 110, group: 'E'}, {x: 255, y: 110, group: 'E'}, {x: 255, y: 150, group: 'E'}, {x: 285, y: 150, group: 'E'}
+            ]
+        },
+        {
+            name: "FOREVER",
+            stars: [
+                {x: 40, y: 70, group: 'F'}, {x: 40, y: 130, group: 'F'}, {x: 70, y: 70, group: 'F'}, {x: 40, y: 100, group: 'F'}, {x: 65, y: 100, group: 'F'},
+                {x: 90, y: 100, group: 'O'}, {x: 110, y: 70, group: 'O'}, {x: 130, y: 100, group: 'O'}, {x: 110, y: 130, group: 'O'}, {x: 90, y: 100, group: 'O'},
+                {x: 150, y: 70, group: 'R'}, {x: 150, y: 130, group: 'R'}, {x: 175, y: 70, group: 'R'}, {x: 175, y: 100, group: 'R'}, {x: 150, y: 100, group: 'R'}, {x: 175, y: 130, group: 'R'},
+                {x: 60, y: 180, group: 'E'}, {x: 90, y: 180, group: 'E'}, {x: 60, y: 210, group: 'E'}, {x: 85, y: 210, group: 'E'}, {x: 60, y: 240, group: 'E'}, {x: 90, y: 240, group: 'E'},
+                {x: 110, y: 180, group: 'V'}, {x: 125, y: 240, group: 'V'}, {x: 140, y: 180, group: 'V'}
+            ]
+        },
+        {
+            name: "SMILE",
+            stars: [
+                {x: 70, y: 70, group: 'S'}, {x: 40, y: 70, group: 'S'}, {x: 40, y: 100, group: 'S'}, {x: 70, y: 100, group: 'S'}, {x: 70, y: 130, group: 'S'}, {x: 40, y: 130, group: 'S'},
+                {x: 90, y: 70, group: 'M'}, {x: 90, y: 130, group: 'M'}, {x: 110, y: 100, group: 'M'}, {x: 130, y: 70, group: 'M'}, {x: 130, y: 130, group: 'M'},
+                {x: 160, y: 70, group: 'I'}, {x: 160, y: 130, group: 'I'},
+                {x: 190, y: 70, group: 'L'}, {x: 190, y: 130, group: 'L'}, {x: 220, y: 130, group: 'L'},
+                {x: 240, y: 180, group: 'heart'}, {x: 270, y: 160, group: 'heart'}, {x: 300, y: 180, group: 'heart'}, {x: 270, y: 220, group: 'heart'}, {x: 240, y: 180, group: 'heart'}
+            ]
+        }
+    ];
+
+    let currentLevelIdx = 0;
+    let stars = [];
+    let trail = [];
+    let connectedCount = 0;
+    let isDrawing = false;
+    let isTransitioning = false;
+
+    function initLevel(idx) {
+        isTransitioning = false;
+        const level = levels[idx % levels.length];
+        connectedCount = 0;
+        stars = level.stars.map(s => ({...s, connected: false}));
+        
+        container.innerHTML = `
+            <h2 style="color: #ff1493; margin-bottom: 5px; font-weight: 800;">✨ Galaxy of Love ✨</h2>
+            <p id="levelName" style="color: #ff69b4; font-size: 16px; margin-bottom: 10px; font-weight: bold;">Tracing: ${level.name}</p>
+            <canvas id="starCanvas" width="320" height="400" style="background: radial-gradient(circle, #000033 0%, #000 100%); border-radius: 30px; box-shadow: 0 0 50px rgba(255, 20, 147, 0.5); cursor: crosshair; touch-action: none;"></canvas>
+            <div id="starStatus" style="color: #ff1493; font-weight: bold; margin-top: 10px; min-height: 24px;">Connect all giant stars!</div>
+            <button onclick="showGamesMenu()" style="margin-top: 15px;">🎮 Back to Games</button>
+        `;
+
+        setupCanvas();
+    }
+
+    function setupCanvas() {
+        const canvas = document.getElementById('starCanvas');
+        const ctx = canvas.getContext('2d');
+
+        function draw() {
+            if (!canvas) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Trail effect
+            trail.forEach((p, i) => {
+                ctx.beginPath();
+                ctx.fillStyle = `rgba(255, 255, 255, ${i / trail.length})`;
+                ctx.arc(p.x, p.y, i / 2.5, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Draw connections per group
+            ctx.lineWidth = 8;
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = '#ff69b4';
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = '#ff1493';
+            
+            ctx.beginPath();
+            stars.forEach((s, i) => {
+                if (s.connected && i > 0) {
+                    const prev = stars[i-1];
+                    if (prev.connected && prev.group === s.group) {
+                        ctx.moveTo(prev.x, prev.y);
+                        ctx.lineTo(s.x, s.y);
+                    }
+                }
+            });
+            ctx.stroke();
+
+            // Draw Stars
+            stars.forEach(s => {
+                ctx.beginPath();
+                ctx.arc(s.x, s.y, s.connected ? 14 : 9, 0, Math.PI * 2);
+                ctx.fillStyle = s.connected ? '#fff' : 'rgba(255, 255, 255, 0.25)';
+                ctx.shadowBlur = s.connected ? 25 : 0;
+                ctx.fill();
+            });
+
+            if (connectedCount >= stars.length && !isTransitioning) {
+                isTransitioning = true;
+                const status = document.getElementById('starStatus');
+                status.innerText = "Level Cleared! ✨ Get ready...";
+                setTimeout(() => {
+                    currentLevelIdx++;
+                    initLevel(currentLevelIdx);
+                }, 2000);
+            }
+            requestAnimationFrame(draw);
+        }
+
+        function handleMove(e) {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+            const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+            const mouseX = clientX - rect.left;
+            const mouseY = clientY - rect.top;
+
+            trail.push({x: mouseX, y: mouseY});
+            if (trail.length > 10) trail.shift();
+
+            if (!isDrawing || isTransitioning) return;
+
+            stars.forEach(star => {
+                const dist = Math.sqrt((mouseX - star.x)**2 + (mouseY - star.y)**2);
+                if (dist < 45 && !star.connected) {
+                    star.connected = true;
+                    connectedCount++;
+                }
+            });
+        }
+
+        canvas.addEventListener('mousedown', () => isDrawing = true);
+        canvas.addEventListener('touchstart', (e) => { isDrawing = true; e.preventDefault(); });
+        window.addEventListener('mouseup', () => isDrawing = false);
+        window.addEventListener('touchend', () => isDrawing = false);
+        canvas.addEventListener('mousemove', handleMove);
+        canvas.addEventListener('touchmove', handleMove);
+
+        requestAnimationFrame(draw);
+    }
+
+    initLevel(currentLevelIdx);
+};
+
+
+
+initializeApp();
+    </script>
+    <style>
+        /* Confetti Animation */
+        @keyframes confettiFall {
+            0% { transform: translateY(-20px) rotate(0deg); }
+            100% { transform: translateY(100vh) rotate(720deg); }
+        }
+        
+        /* Heart Float Animation */
+        @keyframes heartFloat {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(-100vh) scale(1.5); opacity: 0; }
+        }
+
+        /* Fade Out for Score Bursts */
+        @keyframes fadeOut {
+            from { opacity: 1; transform: translateY(0); }
+            to { opacity: 0; transform: translateY(-30px); }
+        }
+
+        #reasonText {
+            transition: opacity 0.3s ease;
+        }
+
+    </style>
+</body>
+</html>
