@@ -4,12 +4,22 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>No Title</title>
+  <title>No Title</title> 
+  
   <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <script>
+  // Immediate redirect check
+  (function() {
+    const introSeen = localStorage.getItem('introSeen');
+    if (introSeen !== 'true') {
+      window.location.href = 'birthday.html';
+    }
+  })();
+</script>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
     import {
-      getDatabase, ref, set, onChildAdded, get, child, query, limitToLast,
+      getDatabase , ref, set, onChildAdded, get, child, query, limitToLast,
       
       onValue, onDisconnect, remove
     } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
@@ -766,7 +776,29 @@ document.getElementById("notifBell").onclick = async function (e) {
     .msgTicks{font-size:14px;color:var(--blue);font-weight:700;margin-left:6px;}
     #typingIndicator{font-size:13px;color:#666;margin-top:6px;}
   .msgAvatar img{width:36px;height:36px;border-radius:50%;object-fit:cover;} .msgAvatar{font-size:22px;}
-  
+  .btn-birthday {
+  background: linear-gradient(45deg, #ff69b4, #ff1493, #ffd700) !important;
+  color: white !important;
+  font-weight: bold !important;
+  border: 2px solid #fff !important;
+  box-shadow: 0 4px 15px rgba(255, 20, 147, 0.4) !important;
+  animation: party-shake 2s infinite ease-in-out;
+}
+
+/* Optional: Adds a little "wobble" effect to make it catch the eye */
+@keyframes party-shake {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+/* Mobile fix to ensure the 4th button fits */
+@media (max-width: 600px) {
+  .mainOptions {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+  }
+}
 /* Mobile adjustments */
 @media (max-width: 600px) {
   input, button {
@@ -830,11 +862,11 @@ document.getElementById("notifBell").onclick = async function (e) {
         <div style="font-weight:700;font-size:20px;color:var(--accent);">Main Options</div>
       </div>
       <div class="mainOptions">
-        <button onclick="openMatesPage()">🤝 Mates</button>
-        <button onclick="viewChatRooms()">💬 Chat Rooms</button>
-        <button onclick="searchMate()">🔍 Search</button>
-      </div>
-    </div>
+  <button onclick="openMatesPage()">🤝 Mates</button>
+  <button onclick="viewChatRooms()">💬 Chat Rooms</button>
+  <button onclick="searchMate()">🔍 Search</button>
+  <button class="btn-birthday" onclick="window.location.href='birthday.html'">🎂 Limited Time Games 🎁</button>
+</div>
 
     <!-- banner area for "continue last chat" (NO auto-open) -->
     <div id="continueChatBanner"></div>
@@ -891,3 +923,4 @@ function showCustomAlert(msg){
 <div id="fbStatus" style="margin:10px;font-size:14px;color:#555"></div>
 </body>
 </html>
+
