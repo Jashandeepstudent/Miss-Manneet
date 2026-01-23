@@ -6,7 +6,17 @@
   <meta charset="utf-8" />
   <title>No Title</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <script>
+  // Immediate redirect check
+  (function() {
+    const introSeen = localStorage.getItem('introSeen');
+    if (introSeen !== 'true') {
+      window.location.href = 'birthday.html';
+    }
+  })();
+</script>
   <script type="module">
+    
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
     import {
       getDatabase, ref, set, onChildAdded, get, child, query, limitToLast,
@@ -891,3 +901,4 @@ function showCustomAlert(msg){
 <div id="fbStatus" style="margin:10px;font-size:14px;color:#555"></div>
 </body>
 </html>
+
