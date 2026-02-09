@@ -1,10 +1,8 @@
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>No Title</title>
+  <title>Pink Chat</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <script>
   // Immediate redirect check
@@ -44,6 +42,9 @@
     let notifCount = 0;
     let notifCache = {}; // store loaded notifs
     let typingTimeouts = {};
+
+    // Sticker emojis
+    const stickers = ['😀','😂','😍','🥰','😎','🤔','😢','😭','😡','🥳','🎉','❤️','💕','👍','👏','🙏','🔥','✨','🌟','⭐','🎈','🎁','🌸','🌺','🌼','💐','🦋','🌈','☀️','🌙','💫'];
 
     function ensureCurrentUserFromStorage() {
       if (!currentUser || !currentUser.userid) {
@@ -536,6 +537,71 @@ function resetScreens() {
       }
     }
 
+    // Photo attachment helpers
+    window.triggerPhotoChoose = function() {
+      document.getElementById('photoInput').click();
+    }
+
+    window.handlePhotoSelect = function(input) {
+      const file = input.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = async function(e) {
+        const photoData = e.target.result;
+        await sendMessageWithPhoto(photoData);
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function sendMessageWithPhoto(photoData) {
+      if (!currentActiveRoom) return;
+      const ts = Date.now();
+      await set(ref(db, "chats/" + currentActiveRoom + "/" + ts), { 
+        user: currentUser.username, 
+        text: '', 
+        photo: currentUser.photo || '',
+        imageData: photoData, 
+        ts 
+      });
+      // notification logic
+      const mateId = currentActiveRoom.split('_').find(id=>id!==currentUser.userid);
+      try {
+        const matePresenceSnap = await get(child(dbRef, "presence/" + mateId));
+        const matePresence = matePresenceSnap.exists() ? matePresenceSnap.val() : null;
+        if (!(matePresence && matePresence.activeRoom === currentActiveRoom)) {
+          addNotificationForUser(mateId, currentUser.username, '📷 Photo', currentActiveRoom);
+        }
+      } catch(e) {}
+    }
+
+    // Sticker helpers
+    window.toggleStickerPicker = function() {
+      const picker = document.getElementById('stickerPicker');
+      picker.style.display = picker.style.display === 'none' ? 'flex' : 'none';
+    }
+
+    window.sendSticker = async function(sticker) {
+      if (!currentActiveRoom) return;
+      const ts = Date.now();
+      await set(ref(db, "chats/" + currentActiveRoom + "/" + ts), { 
+        user: currentUser.username, 
+        text: sticker, 
+        photo: currentUser.photo || '',
+        isSticker: true,
+        ts 
+      });
+      document.getElementById('stickerPicker').style.display = 'none';
+      // notification
+      const mateId = currentActiveRoom.split('_').find(id=>id!==currentUser.userid);
+      try {
+        const matePresenceSnap = await get(child(dbRef, "presence/" + mateId));
+        const matePresence = matePresenceSnap.exists() ? matePresenceSnap.val() : null;
+        if (!(matePresence && matePresence.activeRoom === currentActiveRoom)) {
+          addNotificationForUser(mateId, currentUser.username, sticker, currentActiveRoom);
+        }
+      } catch(e) {}
+    }
+
     window.openChatRoom = async function (mateId, mateName) {
       ensureCurrentUserFromStorage();
       if (!currentUser.userid) { alert("Login first"); return; }
@@ -543,7 +609,7 @@ function resetScreens() {
       currentActiveRoom = currentUser.userid < mateId ? currentUser.userid + "_" + mateId : mateId + "_" + currentUser.userid;
       // update presence activeRoom
       try { set(ref(db, "presence/" + currentUser.userid), { online: true, lastSeen: Date.now(), activeRoom: currentActiveRoom }); } catch(e) {}
-      document.getElementById("chatWith").innerText = "Chatting with " + mateName;
+      document.getElementById("chatWith").innerText = mateName;
       document.getElementById("typingIndicator").innerText = "";
       const chatBox = document.getElementById("chatBox");
       chatBox.innerHTML = "";
@@ -568,7 +634,7 @@ function resetScreens() {
           const others = Object.keys(val || {}).filter(k=>val[k]);
           const indicator = document.getElementById("typingIndicator");
           if (others.length) {
-            indicator.innerText = "Typing...";
+            indicator.innerText = "typing...";
           } else {
             indicator.innerText = "";
           }
@@ -599,14 +665,25 @@ function resetScreens() {
           }
         } catch(e){}
 
-        // show message text and ticks (for messages I sent)
-        const ticksHtml = me ? `<div class="msgTicks">${ isRead ? '✔✔' : '✔' }</div>` : '';
         // avatar (use msg.photo if present)
         let avatarHtml = (msg.photo && msg.photo.length) ? `<img src="${msg.photo}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;" />` : '👤';
-        if (me) {
-          div.innerHTML = `<div style="display:flex;align-items:center;justify-content:flex-end;gap:8px;"><div class="msgText">${escapeHtml(msg.text)}</div><div class="msgAvatar">${avatarHtml}</div></div><div class="msgTime">${escapeHtml(time)} ${ticksHtml}</div>`;
+        
+        // Check if message has image
+        let contentHtml = '';
+        if (msg.imageData) {
+          contentHtml = `<img src="${msg.imageData}" style="max-width:200px;max-height:200px;border-radius:12px;cursor:pointer;" onclick="window.open('${msg.imageData}','_blank')" />`;
+        } else if (msg.isSticker) {
+          contentHtml = `<div style="font-size:48px;">${escapeHtml(msg.text)}</div>`;
         } else {
-          div.innerHTML = `<div style="display:flex;align-items:center;gap:12px;"><div class="msgAvatar">${avatarHtml}</div><div><div class="msgText"><strong>${escapeHtml(msg.user)}</strong>: ${escapeHtml(msg.text)}</div><div class="msgTime">${escapeHtml(time)}</div></div></div>`;
+          contentHtml = `<div style="word-wrap:break-word;word-break:break-word;white-space:pre-wrap;">${escapeHtml(msg.text)}</div>`;
+        }
+
+        const ticksHtml = me ? `<div class="msgTicks">${ isRead ? '✔✔' : '✔' }</div>` : '';
+        
+        if (me) {
+          div.innerHTML = `<div style="display:flex;align-items:flex-end;justify-content:flex-end;gap:8px;"><div class="msgBubble">${contentHtml}</div><div class="msgAvatar">${avatarHtml}</div></div><div class="msgTime">${escapeHtml(time)} ${ticksHtml}</div>`;
+        } else {
+          div.innerHTML = `<div style="display:flex;align-items:flex-end;gap:8px;"><div class="msgAvatar">${avatarHtml}</div><div><div class="msgBubble"><div style="font-weight:700;margin-bottom:4px;font-size:13px;">${escapeHtml(msg.user)}</div>${contentHtml}</div><div class="msgTime">${escapeHtml(time)}</div></div></div>`;
         }
         chatBox.appendChild(div);
         chatBox.scrollTop = chatBox.scrollHeight;
@@ -647,7 +724,7 @@ function resetScreens() {
             if (m.userid === currentUser.userid) return; // skip self
             const btn = document.createElement("div");
             btn.className = "roomRow";
-            btn.innerHTML = `<div class="roomName">Chat with ${escapeHtml(m.username)}</div><div class="roomActions"><button onclick="openChatRoom('${m.userid}','${escapeJs(m.username)}')">Open</button></div>`;
+            btn.innerHTML = `<div class="roomAvatar">${m.photo ? `<img src="${m.photo}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;" />` : '👤'}</div><div class="roomName">${escapeHtml(m.username)}</div><div class="roomActions"><button onclick="openChatRoom('${m.userid}','${escapeJs(m.username)}')">Open</button></div>`;
             list.appendChild(btn);
           });
         } else list.innerText = "No chat rooms yet.";
@@ -691,17 +768,28 @@ function resetScreens() {
         } catch {}
       }
       checkFirebaseStatus();
+      
+      // Populate sticker picker
+      const stickerGrid = document.getElementById('stickerGrid');
+      stickers.forEach(s => {
+        const btn = document.createElement('button');
+        btn.className = 'stickerBtn';
+        btn.innerText = s;
+        btn.onclick = () => sendSticker(s);
+        stickerGrid.appendChild(btn);
+      });
+
       // Bell click to toggle dropdown and load notifications
-document.getElementById("notifBell").onclick = async function (e) {
-  e.stopPropagation();
-  const dropdown = document.getElementById("notifDropdown");
-  if (dropdown.style.display === "block") {
-    dropdown.style.display = "none";
-  } else {
-    dropdown.style.display = "block";
-    await loadNotificationsList();
-  }
-};
+      document.getElementById("notifBell").onclick = async function (e) {
+        e.stopPropagation();
+        const dropdown = document.getElementById("notifDropdown");
+        if (dropdown.style.display === "block") {
+          dropdown.style.display = "none";
+        } else {
+          dropdown.style.display = "block";
+          await loadNotificationsList();
+        }
+      };
       // "mark all read" control
       document.getElementById("markAllReadBtn").onclick = function(){ clearAllNotifications(); };
 
@@ -730,106 +818,555 @@ document.getElementById("notifBell").onclick = async function (e) {
   </script>
 
   <style>
-    :root{ --accent:#ff4d88;--bg:#fff5f9;--white:#ffffff; --blue:#3b82f6; }
-    body{background:var(--bg);font-family:Inter,Arial,sans-serif;margin:18px;}
-    .screen{display:none;max-width:900px;margin:18px auto;background:var(--white);padding:28px;border-radius:20px;box-shadow:0 8px 25px rgba(0,0,0,0.08);position:relative;}
-    h2{color:var(--accent);text-align:center;margin:8px 0 18px 0;}
-    input,button{font-size:16px;border-radius:10px;border:1px solid #ddd;padding:12px;}
-    button{background:var(--accent);color:white;border:none;cursor:pointer;}
-    button:hover{opacity:0.95;}
-    #defaultWhiteBox{display:none;border-radius:18px;padding:22px;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;gap:18px;background:#fff;border:2px solid var(--accent);}
-    .profileBubble{font-size:54px;cursor:pointer;}
-    .mainOptions{display:flex;gap:14px;}
-    .mainOptions button{padding:10px 14px;border-radius:10px;border:none;background:var(--accent);color:white;cursor:pointer;}
-    .profileCard{display:flex;gap:12px;border:1px solid #f0f0f0;padding:12px;border-radius:12px;align-items:center;}
-    .pc-avatar{font-size:42px;cursor:pointer;}
-    .pc-name{font-weight:700;font-size:18px;color:#333;}
-    .mateCard{display:flex;align-items:center;gap:12px;border:1px solid #f1f1f1;padding:12px;border-radius:12px;margin-bottom:10px;}
-    .mate-left{font-size:34px;cursor:pointer;}
-    .mname{font-weight:700;}
-    .back-small{position:fixed;left:20px;bottom:20px;background:var(--blue);color:#fff;padding:10px 14px;border-radius:12px;cursor:pointer;border:none;}
-    #chatBox{border:1px solid #eee;height:320px;overflow:auto;padding:12px;border-radius:12px;background:#fafafa;}
-    /* messages: darker + bigger */
-    .msgRow{padding:10px;margin-bottom:10px;border-radius:12px;max-width:75%;}
-    .msgRow .msgText{font-size:16px;color:#111;font-weight:600;}
-    .msgRow .msgTime{font-size:12px;color:#666;margin-top:6px;display:flex;align-items:center;gap:8px;}
-    .msgRow.me{background:#e6f4ff;margin-left:auto;text-align:right;}
-    .msgRow.them{background:#ffffff;margin-right:auto;text-align:left;}
-    .roomRow{display:flex;justify-content:space-between;align-items:center;padding:12px;border:1px solid #f1f1f1;border-radius:10px;margin-bottom:8px;}
-    .profileBig{display:flex;gap:16px;align-items:center;padding:16px;border:1px solid #f1f1f1;border-radius:12px;background:#fff;}
-    .profileBigAvatar{font-size:62px;}
-    .profileBigName{font-weight:800;font-size:22px;color:#333;}
-    .highlightId{font-weight:700;color:var(--accent);}
-    .successMsg{color:green;font-weight:600;padding:10px;}
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root{ 
+      --primary-pink:#ff4d88;
+      --light-pink:#fff0f6;
+      --lighter-pink:#fff5f9;
+      --white:#ffffff; 
+      --blue:#3b82f6;
+      --gray:#666;
+      --light-gray:#f5f5f5;
+    }
+    body{
+      background: linear-gradient(135deg, var(--lighter-pink) 0%, #ffe8f0 100%);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+    }
+    .screen{
+      display:none;
+      max-width:900px;
+      margin:20px auto;
+      background:var(--white);
+      padding:24px;
+      border-radius:24px;
+      box-shadow:0 10px 40px rgba(255,77,136,0.15);
+      position:relative;
+    }
+    h2{
+      color:var(--primary-pink);
+      text-align:center;
+      margin:0 0 20px 0;
+      font-size:24px;
+      font-weight:700;
+    }
+    input,button{
+      font-size:15px;
+      border-radius:12px;
+      border:1px solid #e5e5e5;
+      padding:12px 16px;
+      font-family: inherit;
+    }
+    input:focus{
+      outline: none;
+      border-color: var(--primary-pink);
+      box-shadow: 0 0 0 3px rgba(255,77,136,0.1);
+    }
+    button{
+      background:var(--primary-pink);
+      color:white;
+      border:none;
+      cursor:pointer;
+      font-weight:600;
+      transition: all 0.3s ease;
+    }
+    button:hover{
+      background:#ff2d6f;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(255,77,136,0.3);
+    }
+    button:active{
+      transform: translateY(0);
+    }
+    #defaultWhiteBox{
+      display:none;
+      border-radius:20px;
+      padding:20px;
+      margin-bottom:20px;
+      background:linear-gradient(135deg, var(--white) 0%, var(--light-pink) 100%);
+      border:2px solid var(--primary-pink);
+      box-shadow: 0 4px 15px rgba(255,77,136,0.1);
+    }
+    .profileBubble{
+      font-size:54px;
+      cursor:pointer;
+      transition: transform 0.3s ease;
+    }
+    .profileBubble:hover{
+      transform: scale(1.1);
+    }
+    .mainOptions{
+      display:flex;
+      gap:12px;
+      flex-wrap: wrap;
+    }
+    .mainOptions button{
+      padding:12px 20px;
+      border-radius:12px;
+      flex: 1;
+      min-width: 100px;
+    }
+    .profileCard{
+      display:flex;
+      gap:16px;
+      border:2px solid var(--light-pink);
+      padding:16px;
+      border-radius:16px;
+      align-items:center;
+      background: var(--white);
+      transition: all 0.3s ease;
+    }
+    .profileCard:hover{
+      border-color: var(--primary-pink);
+      box-shadow: 0 6px 20px rgba(255,77,136,0.15);
+    }
+    .pc-name{
+      font-weight:700;
+      font-size:18px;
+      color:#222;
+    }
+    .pc-id{
+      color: var(--gray);
+      margin-top: 4px;
+      font-size: 14px;
+    }
+    .mateCard{
+      display:flex;
+      align-items:center;
+      gap:14px;
+      border:2px solid var(--light-pink);
+      padding:14px;
+      border-radius:16px;
+      margin-bottom:12px;
+      background: var(--white);
+      transition: all 0.3s ease;
+    }
+    .mateCard:hover{
+      border-color: var(--primary-pink);
+      transform: translateX(4px);
+    }
+    .mname{
+      font-weight:700;
+      font-size: 16px;
+    }
+    .mid{
+      color: var(--gray);
+      font-size: 13px;
+      margin-top: 2px;
+    }
+    .back-small{
+      position:fixed;
+      left:20px;
+      bottom:20px;
+      background:var(--blue);
+      color:#fff;
+      padding:12px 20px;
+      border-radius:50px;
+      cursor:pointer;
+      border:none;
+      box-shadow: 0 6px 20px rgba(59,130,246,0.3);
+      font-weight: 600;
+      z-index: 1000;
+    }
+    #chatBox{
+      border:2px solid var(--light-pink);
+      height:400px;
+      overflow-y:auto;
+      padding:16px;
+      border-radius:16px;
+      background: var(--lighter-pink);
+      margin-bottom: 12px;
+    }
+    
+    /* Improved message bubbles */
+    .msgRow{
+      padding:8px 0;
+      margin-bottom:12px;
+      display: flex;
+      flex-direction: column;
+    }
+    .msgBubble{
+      padding:12px 16px;
+      border-radius:18px;
+      max-width:70%;
+      font-size:15px;
+      line-height: 1.4;
+      word-wrap: break-word;
+      word-break: break-word;
+      white-space: pre-wrap;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .msgRow.me .msgBubble{
+      background: linear-gradient(135deg, var(--primary-pink) 0%, #ff6b9d 100%);
+      color: white;
+      border-bottom-right-radius: 4px;
+    }
+    .msgRow.them .msgBubble{
+      background: var(--white);
+      color: #222;
+      border-bottom-left-radius: 4px;
+      border: 1px solid var(--light-pink);
+    }
+    .msgRow .msgTime{
+      font-size:11px;
+      color: var(--gray);
+      margin-top:4px;
+      display:flex;
+      align-items:center;
+      gap:6px;
+    }
+    .msgRow.me{
+      align-items: flex-end;
+    }
+    .msgRow.them{
+      align-items: flex-start;
+    }
+    
+    .roomRow{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      padding:16px;
+      border:2px solid var(--light-pink);
+      border-radius:16px;
+      margin-bottom:12px;
+      background: var(--white);
+      transition: all 0.3s ease;
+    }
+    .roomRow:hover{
+      border-color: var(--primary-pink);
+      box-shadow: 0 6px 20px rgba(255,77,136,0.15);
+    }
+    .roomAvatar{
+      margin-right: 12px;
+    }
+    .roomName{
+      flex: 1;
+      font-weight: 600;
+      font-size: 16px;
+    }
+    .profileBig{
+      display:flex;
+      gap:20px;
+      align-items:center;
+      padding:20px;
+      border:2px solid var(--light-pink);
+      border-radius:16px;
+      background: var(--white);
+    }
+    .profileBigAvatar{
+      font-size:80px;
+    }
+    .profileBigName{
+      font-weight:800;
+      font-size:24px;
+      color:#222;
+    }
+    .highlightId{
+      font-weight:700;
+      color:var(--primary-pink);
+    }
+    .successMsg{
+      color:#10b981;
+      font-weight:600;
+      padding:12px;
+      background: #ecfdf5;
+      border-radius: 12px;
+      border: 1px solid #10b981;
+    }
    
     /* continue banner */
-    .continueBanner{display:flex;gap:12px;align-items:center;padding:12px;border-radius:12px;background:#fff0f6;border:1px solid rgba(255,77,136,0.2);margin:12px 0;}
-    .continueBanner button{background:#fff;color:var(--accent);border:1px solid var(--accent);padding:8px 12px;border-radius:8px;}
+    .continueBanner{
+      display:flex;
+      gap:16px;
+      align-items:center;
+      padding:16px;
+      border-radius:16px;
+      background: linear-gradient(135deg, var(--white) 0%, var(--light-pink) 100%);
+      border:2px solid var(--primary-pink);
+      margin:16px 0;
+      box-shadow: 0 4px 15px rgba(255,77,136,0.1);
+    }
+    .continueBanner button{
+      background:var(--white);
+      color:var(--primary-pink);
+      border:2px solid var(--primary-pink);
+      padding:8px 16px;
+      border-radius:10px;
+    }
+    
     /* notification UI */
-    #notifBell{position:fixed;top:10px;left:10px;z-index:20000;background:#fff;border:1px solid #eee;padding:8px 10px;border-radius:999px;cursor:pointer;display:flex;align-items:center;gap:8px;box-shadow:0 6px 18px rgba(0,0,0,0.08);}
-    #notifBell .icon{font-size:18px;color:var(--accent);}
-    #notifCount{background:var(--accent);color:#fff;border-radius:999px;padding:4px 8px;font-size:13px;}
-    #notifDropdown{position:fixed;top:64px;left:20px;width:360px;background:#fff;border:1px solid #eee;border-radius:12px;padding:12px;display:none;box-shadow:0 8px 30px rgba(0,0,0,0.08);max-height:420px;overflow:auto;z-index:10000;}
-    .notifRow{display:flex;gap:12px;padding:10px;border-bottom:1px solid #f6f6f6;}
-    .toastNotif{position:fixed;right:20px;bottom:20px;background:#fff;padding:12px;border-radius:12px;border:1px solid #eee;box-shadow:0 10px 30px rgba(0,0,0,0.08);z-index:10000;cursor:pointer;}
-    .notifPopup{position:fixed;right:20px;bottom:90px;background:#fff;padding:12px;border-radius:12px;border:1px solid #eee;box-shadow:0 10px 30px rgba(0,0,0,0.12);z-index:10000;}
-    .msgTicks{font-size:14px;color:var(--blue);font-weight:700;margin-left:6px;}
-    #typingIndicator{font-size:13px;color:#666;margin-top:6px;}
-  .msgAvatar img{width:36px;height:36px;border-radius:50%;object-fit:cover;} .msgAvatar{font-size:22px;}
-  
-/* Mobile adjustments */
-@media (max-width: 600px) {
-  input, button {
-    font-size: 14px !important;
-    padding: 8px 10px !important;
-    border-radius: 8px !important;
-  }
-  h2 {
-    font-size: 18px !important;
-  }
-  .mainOptions {
-    flex-direction: column !important;
-    gap: 10px !important;
-  }
-  .mainOptions button {
-    width: 100% !important;
-    padding: 10px !important;
-  }
-  #searchInput {
-    width: 100% !important;
-    font-size: 14px !important;
-    padding: 8px !important;
-  }
-}
+    #notifBell{
+      position:fixed;
+      top:16px;
+      left:16px;
+      z-index:20000;
+      background:var(--white);
+      border:2px solid var(--light-pink);
+      padding:10px 14px;
+      border-radius:50px;
+      cursor:pointer;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      box-shadow:0 6px 20px rgba(255,77,136,0.15);
+      transition: all 0.3s ease;
+    }
+    #notifBell:hover{
+      box-shadow:0 8px 25px rgba(255,77,136,0.25);
+      transform: translateY(-2px);
+    }
+    #notifBell .icon{
+      font-size:20px;
+      color:var(--primary-pink);
+    }
+    #notifCount{
+      background:var(--primary-pink);
+      color:#fff;
+      border-radius:999px;
+      padding:4px 10px;
+      font-size:12px;
+      font-weight: 700;
+    }
+    #notifDropdown{
+      position:fixed;
+      top:80px;
+      left:20px;
+      width:360px;
+      background:var(--white);
+      border:2px solid var(--light-pink);
+      border-radius:16px;
+      padding:16px;
+      display:none;
+      box-shadow:0 10px 40px rgba(255,77,136,0.2);
+      max-height:450px;
+      overflow-y:auto;
+      z-index:10000;
+    }
+    .notifRow{
+      display:flex;
+      gap:12px;
+      padding:12px;
+      border-bottom:1px solid var(--light-pink);
+      transition: background 0.2s ease;
+    }
+    .notifRow:hover{
+      background: var(--lighter-pink);
+    }
+    .toastNotif{
+      position:fixed;
+      right:20px;
+      bottom:20px;
+      background:var(--white);
+      padding:16px;
+      border-radius:16px;
+      border:2px solid var(--primary-pink);
+      box-shadow:0 10px 40px rgba(255,77,136,0.2);
+      z-index:10000;
+      cursor:pointer;
+      max-width: 300px;
+    }
+    .notifPopup{
+      position:fixed;
+      right:20px;
+      bottom:100px;
+      background:var(--white);
+      padding:16px;
+      border-radius:16px;
+      border:2px solid var(--primary-pink);
+      box-shadow:0 10px 40px rgba(255,77,136,0.25);
+      z-index:10000;
+      max-width: 300px;
+    }
+    .msgTicks{
+      font-size:12px;
+      color:#fff;
+      font-weight:700;
+      margin-left:4px;
+    }
+    #typingIndicator{
+      font-size:13px;
+      color:var(--gray);
+      margin-bottom:8px;
+      font-style: italic;
+      height: 18px;
+    }
+    .msgAvatar{
+      font-size:36px;
+      flex-shrink: 0;
+    }
+    
+    /* Photo and sticker controls */
+    .chatInputControls{
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+      align-items: center;
+    }
+    .chatInputControls input{
+      flex: 1;
+    }
+    .iconBtn{
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: var(--white);
+      border: 2px solid var(--light-pink);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+      padding: 0;
+    }
+    .iconBtn:hover{
+      background: var(--light-pink);
+      border-color: var(--primary-pink);
+      transform: translateY(-2px);
+    }
+    .iconBtn svg{
+      width: 22px;
+      height: 22px;
+      fill: var(--primary-pink);
+    }
+    #photoInput{
+      display: none;
+    }
+    #stickerPicker{
+      position: absolute;
+      bottom: 70px;
+      right: 20px;
+      background: var(--white);
+      border: 2px solid var(--primary-pink);
+      border-radius: 16px;
+      padding: 12px;
+      display: none;
+      flex-wrap: wrap;
+      gap: 8px;
+      width: 280px;
+      max-height: 240px;
+      overflow-y: auto;
+      box-shadow: 0 10px 40px rgba(255,77,136,0.2);
+      z-index: 100;
+    }
+    .stickerBtn{
+      width: 48px;
+      height: 48px;
+      font-size: 28px;
+      background: var(--lighter-pink);
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      padding: 0;
+    }
+    .stickerBtn:hover{
+      background: var(--light-pink);
+      transform: scale(1.15);
+    }
 
-#fbStatus { display: none !important; }
-</style>
+    /* Mobile responsive */
+    @media (max-width: 768px) {
+      body{
+        padding: 0;
+        margin: 0;
+      }
+      .screen{
+        margin: 10px;
+        padding: 16px;
+        border-radius: 16px;
+      }
+      h2{
+        font-size: 20px;
+      }
+      input, button{
+        font-size: 14px;
+        padding: 10px 14px;
+      }
+      .mainOptions{
+        flex-direction: column;
+      }
+      .mainOptions button{
+        width: 100%;
+      }
+      #defaultWhiteBox{
+        flex-direction: column;
+        gap: 16px;
+        padding: 16px;
+      }
+      .profileBubble{
+        font-size: 48px;
+      }
+      #chatBox{
+        height: 300px;
+      }
+      .msgBubble{
+        max-width: 85%;
+        font-size: 14px;
+      }
+      #notifDropdown{
+        width: calc(100vw - 40px);
+        left: 20px;
+        right: 20px;
+      }
+      #stickerPicker{
+        width: calc(100vw - 40px);
+        right: 20px;
+        left: 20px;
+      }
+      .back-small{
+        left: 50%;
+        transform: translateX(-50%);
+        bottom: 16px;
+      }
+      .chatInputControls{
+        flex-wrap: wrap;
+      }
+      .chatInputControls input{
+        width: 100%;
+      }
+      .iconBtn{
+        width: 40px;
+        height: 40px;
+      }
+    }
+
+    #fbStatus { display: none !important; }
+  </style>
 </head>
 <body>
   <div id="notifBell"><span class="icon">🔔</span> <span id="notifCount"></span></div>
-  <div id="notifDropdown"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div style="font-weight:800">Notifications</div><button id="markAllReadBtn" style="background:#fff;color:var(--accent);border:1px solid var(--accent);padding:6px 10px;border-radius:8px">Mark all read</button></div><div id="notifList"></div></div>
+  <div id="notifDropdown">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div style="font-weight:800;font-size:16px;">Notifications</div>
+      <button id="markAllReadBtn" style="background:#fff;color:var(--primary-pink);border:2px solid var(--primary-pink);padding:6px 12px;border-radius:10px;font-size:13px;">Clear All</button>
+    </div>
+    <div id="notifList"></div>
+  </div>
 
 
   <div id="step1" class="screen" style="display:block;">
-    <h2>Step 1 — Login</h2>
-    <div style="display:flex;flex-direction:column;gap:8px;">
-      <input id="username" placeholder="Username" style="width:100%" />
-      <input id="password" type="text" placeholder="Password" style="width:100%" />
+    <h2>✨ Welcome to Pink Chat</h2>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <input id="username" placeholder="Enter your username" style="width:100%" />
+      <input id="password" type="text" placeholder="Enter your password" style="width:100%" />
     </div>
-    <div style="margin-top:12px;">
-      <button onclick="nextStep()">Next →</button>
+    <div style="margin-top:16px;">
+      <button onclick="nextStep()" style="width:100%;">Next →</button>
     </div>
   </div>
 
   <div id="step2" class="screen">
-    <h2>Step 2 — Choose User ID</h2>
-    <div style="display:flex;flex-direction:column;gap:8px;">
-    <input id="userid" placeholder="User ID (unique)" style="width:100%" />
-    <label style="font-size:13px;color:#555">Upload profile photo (optional)</label>
-    <input type="file" id="profilePhoto" accept="image/*" capture="environment" style="margin-top:6px;" />
+    <h2>📝 Choose Your ID</h2>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <input id="userid" placeholder="Enter unique User ID" style="width:100%" />
+      <label style="font-size:14px;color:var(--gray);font-weight:600;">Profile Photo (optional)</label>
+      <input type="file" id="profilePhoto" accept="image/*" capture="environment" style="margin-top:6px;" />
     </div>
-    <div style="margin-top:12px;">
-      <button onclick="finishRegister()">Finish & Go to Home</button>
+    <div style="margin-top:16px;">
+      <button onclick="finishRegister()" style="width:100%;">Complete & Start Chatting</button>
     </div>
   </div>
 
@@ -837,32 +1374,33 @@ document.getElementById("notifBell").onclick = async function (e) {
     <div id="defaultWhiteBox">
       <div style="display:flex;align-items:center;gap:18px;">
         <div class="profileBubble" id="profileBubble" onclick="showMyProfile()">👤</div>
-        <div style="font-weight:700;font-size:20px;color:var(--accent);">Main Options</div>
+        <div style="font-weight:700;font-size:20px;color:var(--primary-pink);">Pink Chat</div>
       </div>
       <div class="mainOptions">
-        <button onclick="openMatesPage()">🤝 Mates</button>
-        <button onclick="viewChatRooms()">💬 Chat Rooms</button>
-        <button onclick="searchMate()">🔍 Search</button>
+        <button onclick="openMatesPage()">🤝 My Mates</button>
+        <button onclick="viewChatRooms()">💬 Chats</button>
+        <button onclick="searchMate()">🔍 Find Friends</button>
       </div>
     </div>
 
-    <!-- banner area for "continue last chat" (NO auto-open) -->
     <div id="continueChatBanner"></div>
 
-    <h2>Search your mate</h2>
-    <input id="searchInput" placeholder="Enter mate UserID" />
-    <div style="margin-top:10px;"><button onclick="searchMate()">Search Mate</button></div>
-    <div id="searchResult" style="margin-top:12px;"></div>
+    <h2>🔍 Find Your Mate</h2>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <input id="searchInput" placeholder="Enter mate's User ID" style="flex:1;min-width:200px;" />
+      <button onclick="searchMate()">Search</button>
+    </div>
+    <div id="searchResult" style="margin-top:16px;"></div>
   </div>
 
   <div id="matesScreen" class="screen">
-    <h2>Your Mates</h2>
+    <h2>👥 Your Mates</h2>
     <div id="matesList"></div>
     <button class="back-small" onclick="goBack()">⬅ Back</button>
   </div>
 
   <div id="profileScreen" class="screen">
-    <h2>Profile</h2>
+    <h2>👤 Profile</h2>
     <div id="profileContent"></div>
     <button class="back-small" onclick="goBack()">⬅ Back</button>
   </div>
@@ -871,34 +1409,47 @@ document.getElementById("notifBell").onclick = async function (e) {
     <h2 id="chatWith"></h2>
     <div id="typingIndicator"></div>
     <div id="chatBox"></div>
-    <div style="display:flex;gap:12px;margin-top:12px;">
-      <input id="message" placeholder="Type a message..." style="flex:1;" />
+    
+    <div class="chatInputControls">
+      <input id="message" placeholder="Type a message..." />
+      <button class="iconBtn" onclick="triggerPhotoChoose()" title="Send Photo">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+      </button>
+      <button class="iconBtn" onclick="toggleStickerPicker()" title="Send Sticker">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"/></svg>
+      </button>
       <button id="sendBtn">Send</button>
     </div>
+    
+    <input type="file" id="photoInput" accept="image/*" capture="environment" onchange="handlePhotoSelect(this)" />
+    
+    <div id="stickerPicker">
+      <div id="stickerGrid"></div>
+    </div>
+    
     <button class="back-small" onclick="goBack()">⬅ Back</button>
   </div>
 
   <div id="chatRoomsScreen" class="screen">
-    <h2>Chat Rooms</h2>
+    <h2>💬 Chat Rooms</h2>
     <div id="chatRoomList"></div>
     <button class="back-small" onclick="goBack()">⬅ Back</button>
   </div>
 
-<div id="customAlert" style="display:none;position:fixed;top:20px;right:20px;
-background:#4CAF50;color:#fff;padding:14px 20px;border-radius:10px;
-box-shadow:0 4px 12px rgba(0,0,0,0.2);z-index:10000;">
-  ✅ Profile updated successfully!
-</div>
-<script>
-function showCustomAlert(msg){
-  const box=document.getElementById("customAlert");
-  box.innerText=msg;
-  box.style.display="block";
-  setTimeout(()=>{box.style.display="none";},3000);
-}
-</script>
+  <div id="customAlert" style="display:none;position:fixed;top:20px;right:20px;
+  background:#10b981;color:#fff;padding:14px 20px;border-radius:12px;
+  box-shadow:0 6px 20px rgba(16,185,129,0.3);z-index:10000;font-weight:600;">
+    ✅ Profile updated successfully!
+  </div>
+  <script>
+  function showCustomAlert(msg){
+    const box=document.getElementById("customAlert");
+    box.innerText=msg;
+    box.style.display="block";
+    setTimeout(()=>{box.style.display="none";"},3000);
+  }
+  </script>
 
-<div id="fbStatus" style="margin:10px;font-size:14px;color:#555"></div>
+  <div id="fbStatus" style="margin:10px;font-size:14px;color:#555"></div>
 </body>
 </html>
-
