@@ -773,9 +773,9 @@ function resetScreens() {
     function checkFirebaseStatus() {
       try {
         set(ref(db, "status/test"), { ping: Date.now() });
-        var el=document.getElementById("fbStatus"); if(el) el.innerText="✅ Firebase Connected";
+        var el=document.getElementById("fbStatus"); if(el) el.innerText="";
       } catch {
-        var el=document.getElementById("fbStatus"); if(el) el.innerText="❌ Firebase Offline";
+        var el=document.getElementById("fbStatus"); if(el) el.innerText="";
       }
     }
 
@@ -1654,7 +1654,7 @@ function resetScreens() {
 
 
   <div id="step1" class="screen" style="display:block;">
-    <h2>✨ Welcome to Pink Chat</h2>
+    <h2>✨ Welcome </h2>
     <div style="display:flex;flex-direction:column;gap:12px;">
       <input id="username" placeholder="Enter your username" style="width:100%" />
       <input id="password" type="text" placeholder="Enter your password" style="width:100%" />
