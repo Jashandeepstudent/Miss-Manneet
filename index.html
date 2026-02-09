@@ -1379,93 +1379,51 @@ function resetScreens() {
     overflow: hidden;
   }
   
-.screen{
-  margin: 0;
-  padding: 16px;
-  border-radius: 0;
-  height: 100vh;
-  max-width: 100%;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-}
+  .screen{
+    margin: 0;
+    padding: 16px;
+    border-radius: 0;
+    height: 100vh;
+    max-width: 100%;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
 
-#chatScreen{
-  padding: 50px 12px 12px 12px;
-  height: 100vh;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  width: 100%;
-  margin: 0;
-  border-radius: 0;
-}
+  #chatScreen{
+    padding: 50px 12px 12px 12px;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    margin: 0;
+    border-radius: 0;
+  }
 
-#chatScreen h2 {
-  margin-top: 0;
-  margin-bottom: 8px;
-  flex-shrink: 0;
-}
+  #chatScreen h2 {
+    margin-top: 0;
+    margin-bottom: 8px;
+    flex-shrink: 0;
+  }
 
-#typingIndicator {
-  flex-shrink: 0;
-  margin-bottom: 4px;
-  height: 18px;
-}
+  #typingIndicator {
+    flex-shrink: 0;
+    margin-bottom: 4px;
+    height: 18px;
+  }
 
-#chatRoomList, #matesList{
-  max-height: calc(100vh - 180px);
-  overflow-y: scroll;
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior: contain;
-  padding-bottom: 20px;
-}
-       
-#chatBox{
-  height: auto;
-  flex: 1;
-  min-height: 0;
-  overflow-y: scroll;
-  -webkit-overflow-scrolling: touch;
-  margin-bottom: 8px;
-}      input, button{
-        font-size: 14px;
-        padding: 10px 14px;
-      }
-      .mainOptions{
-        flex-direction: row;
-        justify-content: center;
-        flex-wrap: wrap;
-      }
-      .mainOptions button{
-        padding: 5px 10px;
-        font-size: 10px;
-        flex: 0 0 auto;
-      }
-      #defaultWhiteBox{
-        padding: 14px;
-      }
-#defaultWhiteBox > div:first-child{
-  flex-direction: row !important;
-  align-items: center !important;
-  justify-content: space-between !important;
-  gap: 10px !important;
-}
-#defaultWhiteBox .profileBubble{
-  font-size: 40px;
-  flex-shrink: 0;
-}
-#defaultWhiteBox .mainOptions{
-  flex: 1;
-  justify-content: flex-end;
-}
-      .profileBubble{
-        font-size: 42px;
-      }
+  #chatRoomList, #matesList{
+    max-height: calc(100vh - 180px);
+    overflow-y: scroll;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    padding-bottom: 20px;
+  }
        
   #chatBox{
     height: auto;
@@ -1475,7 +1433,13 @@ function resetScreens() {
     -webkit-overflow-scrolling: touch;
     margin-bottom: 8px;
   }
-      .msgBubble{
+  
+  input, button{
+    font-size: 14px;
+    padding: 10px 14px;
+  }
+  
+  /* Continue with rest of mobile styles... */      .msgBubble{
         max-width: 85%;
         font-size: 14px;
       }
