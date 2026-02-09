@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>No Title</title>
+  <title>Pink Chat</title>
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
   <script>
   // Immediate redirect check
@@ -58,6 +58,15 @@
     function showScreen(id) {
       resetScreens();
       document.getElementById(id).style.display = "block";
+      
+      // Hide/show notification bell based on screen
+      const notifBell = document.getElementById("notifBell");
+      if (id === "chatScreen") {
+        notifBell.style.display = "none";
+      } else {
+        notifBell.style.display = "flex";
+      }
+      
       // prevent duplicate consecutive entries
       if (screenHistory[screenHistory.length-1] !== id) screenHistory.push(id);
     }
@@ -68,9 +77,18 @@
         const prev = screenHistory[screenHistory.length - 1];
         resetScreens();
         document.getElementById(prev).style.display = "block";
+        
+        // Hide/show notification bell
+        const notifBell = document.getElementById("notifBell");
+        if (prev === "chatScreen") {
+          notifBell.style.display = "none";
+        } else {
+          notifBell.style.display = "flex";
+        }
       } else {
         resetScreens();
         document.getElementById("homeScreen").style.display = "block";
+        document.getElementById("notifBell").style.display = "flex";
         screenHistory = ["homeScreen"];
       }
     }
@@ -878,6 +896,7 @@ function resetScreens() {
       -ms-user-select: none;
       user-select: none;
       -webkit-touch-callout: none;
+      overflow-x: hidden;
     }
     .screen{
       display:none;
@@ -888,9 +907,6 @@ function resetScreens() {
       border-radius:24px;
       box-shadow:0 10px 40px rgba(255,77,136,0.15);
       position:relative;
-    }
-    .screen#chatScreen{
-      display:none;
     }
     h2{
       color:var(--primary-pink);
@@ -1048,14 +1064,13 @@ function resetScreens() {
     }
     #chatBox{
       border:2px solid var(--light-pink);
-      height:calc(100vh - 280px);
+      height:400px;
       overflow-y:auto;
       overflow-x:hidden;
       padding:16px;
       border-radius:16px;
       background: var(--lighter-pink);
       margin-bottom: 12px;
-      touch-action: pan-y;
     }
     
     /* Improved message bubbles */
@@ -1206,18 +1221,6 @@ function resetScreens() {
       box-shadow:0 8px 25px rgba(255,77,136,0.25);
       transform: translateY(-2px);
     }
-#chatRoomList{
-  max-height: calc(100vh - 200px);
-  overflow-y: scroll;
-  -webkit-overflow-scrolling: touch;
-  padding-right: 4px;
-}
-#matesList{
-  max-height: calc(100vh - 200px);
-  overflow-y: scroll;
-  -webkit-overflow-scrolling: touch;
-  padding-right: 4px;
-}
     #notifBell .icon{
       display: flex;
       align-items: center;
@@ -1306,7 +1309,6 @@ function resetScreens() {
     .chatInputControls{
       display: flex;
       gap: 8px;
-      margin-top: 12px;
       align-items: center;
     }
     .chatInputControls input{
@@ -1324,6 +1326,7 @@ function resetScreens() {
       justify-content: center;
       transition: all 0.3s ease;
       padding: 0;
+      flex-shrink: 0;
     }
     .iconBtn:hover{
       background: var(--light-pink);
@@ -1339,9 +1342,10 @@ function resetScreens() {
       display: none;
     }
     #stickerPicker{
-      position: absolute;
-      bottom: 70px;
-      right: 20px;
+      position: fixed;
+      bottom: 140px;
+      left: 50%;
+      transform: translateX(-50%);
       background: var(--white);
       border: 2px solid var(--primary-pink);
       border-radius: 16px;
@@ -1377,136 +1381,164 @@ function resetScreens() {
         padding: 0;
         margin: 0;
         overflow: hidden;
+        position: fixed;
+        width: 100%;
+        height: 100%;
       }
-.screen{
-  margin: 0;
-  padding: 16px;
-  border-radius: 0;
-  height: 100vh;
-  max-width: 100%;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-}
-#chatRoomList, #matesList{
-  max-height: calc(100vh - 180px);
-  overflow-y: scroll;
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior: contain;
-  padding-bottom: 20px;
-}
- #chatScreen{
-    padding: 50px 12px 12px 12px;
-    height: 100vh;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-  }
-  
-  #chatScreen h2 {
-    margin-top: 0;
-    margin-bottom: 8px;
-    flex-shrink: 0;
-  }
+      
+      .screen{
+        margin: 0;
+        padding: 16px;
+        border-radius: 0;
+        height: 100vh;
+        max-width: 100%;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      
+      #chatScreen{
+        padding: 60px 12px 12px 12px;
+        height: 100vh;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+      
+      #chatScreen h2 {
+        margin-top: 0;
+        margin-bottom: 4px;
+        flex-shrink: 0;
+      }
+      
+      #typingIndicator{
+        flex-shrink: 0;
+        margin-bottom: 8px;
+      }
+      
+      #chatBox{
+        flex: 1;
+        min-height: 0;
+        height: auto;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        margin-bottom: 12px;
+      }
+      
+      #chatRoomList, #matesList{
+        max-height: calc(100vh - 180px);
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
+        padding-bottom: 20px;
+      }
+      
       input, button{
         font-size: 14px;
         padding: 10px 14px;
       }
+      
       .mainOptions{
         flex-direction: row;
         justify-content: center;
         flex-wrap: wrap;
       }
+      
       .mainOptions button{
         padding: 5px 10px;
         font-size: 10px;
         flex: 0 0 auto;
       }
+      
       #defaultWhiteBox{
         padding: 14px;
       }
-#defaultWhiteBox > div:first-child{
-  flex-direction: row !important;
-  align-items: center !important;
-  justify-content: space-between !important;
-  gap: 10px !important;
-}
-#defaultWhiteBox .profileBubble{
-  font-size: 40px;
-  flex-shrink: 0;
-}
-#defaultWhiteBox .mainOptions{
-  flex: 1;
-  justify-content: flex-end;
-}
+      
+      #defaultWhiteBox > div:first-child{
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        gap: 10px !important;
+      }
+      
+      #defaultWhiteBox .profileBubble{
+        font-size: 40px;
+        flex-shrink: 0;
+      }
+      
+      #defaultWhiteBox .mainOptions{
+        flex: 1;
+        justify-content: flex-end;
+      }
+      
       .profileBubble{
         font-size: 42px;
       }
-       
-  #chatBox{
-    height: auto;
-    flex: 1;
-    min-height: 0;
-    overflow-y: scroll;
-    -webkit-overflow-scrolling: touch;
-    margin-bottom: 8px;
-  }
+      
       .msgBubble{
         max-width: 85%;
         font-size: 14px;
       }
+      
       #notifDropdown{
         width: calc(100vw - 40px);
         left: auto;
         right: 20px;
       }
+      
       #stickerPicker{
         width: calc(100vw - 40px);
-        right: 20px;
-        left: 20px;
+        right: auto;
+        left: 50%;
+        transform: translateX(-50%);
+        bottom: 80px;
       }
-.back-small{
-  left: 10px;
-  top: 10px;
-  transform: none;
-  padding: 8px 12px;
-  font-size: 13px;
-  gap: 3px;
-  max-width: 80px;
-}
-.back-small svg{
-  width: 14px;
-  height: 14px;
-}
+      
+      .back-small{
+        left: 10px;
+        top: 10px;
+        transform: none;
+        padding: 8px 12px;
+        font-size: 13px;
+        gap: 3px;
+        max-width: 80px;
+      }
+      
+      .back-small svg{
+        width: 14px;
+        height: 14px;
+      }
+      
       .chatInputControls{
-    flex-wrap: nowrap;
-    flex-shrink: 0;
-    gap: 6px;
-    padding-bottom: 8px;
-  }
-  
-  .chatInputControls input{
-    flex: 1;
-    min-width: 0;
-    font-size: 14px;
-    padding: 10px 12px;
-  }
-  
-  .chatInputControls button#sendBtn {
-    padding: 10px 16px;
-    white-space: nowrap;
-  }
-  
-  .iconBtn{
-    width: 40px;
-    height: 40px;
-    flex-shrink: 0;
-  }
-  
-  .iconBtn svg {
-    width: 20px;
-    height: 20px;
-  }
-}
+        flex-wrap: nowrap;
+        flex-shrink: 0;
+        gap: 6px;
+        padding-bottom: env(safe-area-inset-bottom);
+      }
+      
+      .chatInputControls input{
+        flex: 1;
+        min-width: 0;
+        font-size: 14px;
+        padding: 10px 12px;
+      }
+      
+      .chatInputControls button#sendBtn {
+        padding: 10px 16px;
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+      
+      .iconBtn{
+        width: 40px;
+        height: 40px;
+        flex-shrink: 0;
+      }
+      
+      .iconBtn svg {
+        width: 20px;
+        height: 20px;
+      }
+    }
 
     #fbStatus { display: none !important; }
     
@@ -1855,7 +1887,6 @@ function resetScreens() {
       Back
     </button>
   </div>
-
   <div id="chatRoomsScreen" class="screen">
     <h2>
       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle;margin-right:8px;">
