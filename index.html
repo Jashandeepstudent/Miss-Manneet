@@ -1373,30 +1373,12 @@ function resetScreens() {
     }
 
 @media (max-width: 768px) {
-  #chatScreen{
-    padding: 50px 12px 12px 12px;
-    height: 100vh;
+  body{
+    padding: 0;
+    margin: 0;
     overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    width: 100%;
   }
   
-  #chatScreen h2 {
-    margin-top: 0;
-    margin-bottom: 8px;
-    flex-shrink: 0;
-  }
-  
-  #typingIndicator {
-    flex-shrink: 0;
-    margin-bottom: 4px;
-  }
 .screen{
   margin: 0;
   padding: 16px;
@@ -1406,6 +1388,35 @@ function resetScreens() {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
+
+#chatScreen{
+  padding: 50px 12px 12px 12px;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  margin: 0;
+  border-radius: 0;
+}
+
+#chatScreen h2 {
+  margin-top: 0;
+  margin-bottom: 8px;
+  flex-shrink: 0;
+}
+
+#typingIndicator {
+  flex-shrink: 0;
+  margin-bottom: 4px;
+  height: 18px;
+}
+
 #chatRoomList, #matesList{
   max-height: calc(100vh - 180px);
   overflow-y: scroll;
@@ -1413,20 +1424,15 @@ function resetScreens() {
   overscroll-behavior: contain;
   padding-bottom: 20px;
 }
- #chatScreen{
-    padding: 50px 12px 12px 12px;
-    height: 100vh;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-  }
-  
-  #chatScreen h2 {
-    margin-top: 0;
-    margin-bottom: 8px;
-    flex-shrink: 0;
-  }
-      input, button{
+       
+#chatBox{
+  height: auto;
+  flex: 1;
+  min-height: 0;
+  overflow-y: scroll;
+  -webkit-overflow-scrolling: touch;
+  margin-bottom: 8px;
+}      input, button{
         font-size: 14px;
         padding: 10px 14px;
       }
