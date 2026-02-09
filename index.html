@@ -2,20 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>No Title</title>
+  <title>Pink Chat</title>
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
   <script>
-  // Splash screen on app load
-  window.addEventListener('load', function() {
-    const splash = document.getElementById('splashScreen');
-    setTimeout(function() {
-      splash.style.opacity = '0';
-      setTimeout(function() {
-        splash.style.display = 'none';
-      }, 500);
-    }, 2000);
-  });
-
   // Immediate redirect check
   (function() {
     const introSeen = localStorage.getItem('introSeen');
@@ -564,6 +553,17 @@ function resetScreens() {
       reader.readAsDataURL(file);
     }
 
+    window.openPhotoViewer = function(photoSrc) {
+      const viewer = document.getElementById('photoViewer');
+      const img = viewer.querySelector('img');
+      img.src = photoSrc;
+      viewer.style.display = 'flex';
+    }
+
+    window.closePhotoViewer = function() {
+      document.getElementById('photoViewer').style.display = 'none';
+    }
+
     async function sendMessageWithPhoto(photoData) {
       if (!currentActiveRoom) return;
       const ts = Date.now();
@@ -681,8 +681,10 @@ function resetScreens() {
         
         // Check if message has image
         let contentHtml = '';
+        let bubbleClass = '';
         if (msg.imageData) {
-          contentHtml = `<img src="${msg.imageData}" style="max-width:200px;max-height:200px;border-radius:12px;cursor:pointer;" onclick="window.open('${msg.imageData}','_blank')" />`;
+          bubbleClass = ' photo';
+          contentHtml = `<img src="${msg.imageData}" style="max-width:250px;max-height:250px;border-radius:10px;cursor:pointer;display:block;" onclick="openPhotoViewer('${msg.imageData}')" />`;
         } else if (msg.isSticker) {
           contentHtml = `<div style="font-size:48px;">${escapeHtml(msg.text)}</div>`;
         } else {
@@ -692,9 +694,9 @@ function resetScreens() {
         const ticksHtml = me ? `<div class="msgTicks">${ isRead ? '✔✔' : '✔' }</div>` : '';
         
         if (me) {
-          div.innerHTML = `<div style="display:flex;align-items:flex-end;justify-content:flex-end;gap:8px;"><div class="msgBubble">${contentHtml}</div><div class="msgAvatar">${avatarHtml}</div></div><div class="msgTime">${escapeHtml(time)} ${ticksHtml}</div>`;
+          div.innerHTML = `<div style="display:flex;align-items:flex-end;justify-content:flex-end;gap:8px;"><div class="msgBubble${bubbleClass}">${contentHtml}</div><div class="msgAvatar">${avatarHtml}</div></div><div class="msgTime">${escapeHtml(time)} ${ticksHtml}</div>`;
         } else {
-          div.innerHTML = `<div style="display:flex;align-items:flex-end;gap:8px;"><div class="msgAvatar">${avatarHtml}</div><div><div class="msgBubble"><div style="font-weight:700;margin-bottom:4px;font-size:13px;">${escapeHtml(msg.user)}</div>${contentHtml}</div><div class="msgTime">${escapeHtml(time)}</div></div></div>`;
+          div.innerHTML = `<div style="display:flex;align-items:flex-end;gap:8px;"><div class="msgAvatar">${avatarHtml}</div><div><div class="msgBubble${bubbleClass}"><div style="font-weight:700;margin-bottom:4px;font-size:13px;">${escapeHtml(msg.user)}</div>${contentHtml}</div><div class="msgTime">${escapeHtml(time)}</div></div></div>`;
         }
         chatBox.appendChild(div);
         chatBox.scrollTop = chatBox.scrollHeight;
@@ -840,33 +842,6 @@ function resetScreens() {
       --light-gray:#f5f5f5;
     }
     
-    /* Splash Screen */
-    #splashScreen{
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: white;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 99999;
-      transition: opacity 0.5s ease;
-    }
-    #splashScreen img{
-      width: 120px;
-      height: 120px;
-      border-radius: 50%;
-      object-fit: cover;
-      animation: pulse 1.5s ease-in-out infinite;
-      box-shadow: 0 10px 40px rgba(255,77,136,0.3);
-    }
-    @keyframes pulse {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.1); }
-    }
-    
     body{
       background: linear-gradient(135deg, var(--lighter-pink) 0%, #ffe8f0 100%);
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -947,11 +922,11 @@ function resetScreens() {
       flex-wrap: wrap;
     }
     .mainOptions button{
-      padding:8px 14px;
-      border-radius:10px;
+      padding:6px 10px;
+      border-radius:8px;
       flex: 1;
-      min-width: 80px;
-      font-size: 13px;
+      min-width: 70px;
+      font-size: 12px;
     }
     .profileCard{
       display:flex;
@@ -1044,6 +1019,15 @@ function resetScreens() {
       word-break: break-word;
       white-space: pre-wrap;
       box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .msgBubble.photo{
+      padding: 4px;
+      max-width: 80%;
+    }
+    .msgBubble img{
+      display: block;
+      width: 100%;
+      height: auto;
     }
     .msgRow.me .msgBubble{
       background: linear-gradient(135deg, var(--primary-pink) 0%, #ff6b9d 100%);
@@ -1383,14 +1367,43 @@ function resetScreens() {
     }
 
     #fbStatus { display: none !important; }
+    
+    /* Fullscreen Photo Viewer */
+    #photoViewer{
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.95);
+      z-index: 99999;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+    #photoViewer img{
+      max-width: 90%;
+      max-height: 90%;
+      object-fit: contain;
+    }
+    #photoViewerClose{
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: var(--white);
+      color: var(--primary-pink);
+      border: none;
+      padding: 10px 20px;
+      border-radius: 50px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 16px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      z-index: 100000;
+    }
   </style>
 </head>
 <body>
-  <!-- Splash Screen -->
-  <div id="splashScreen">
-    <img src="manneet.png" alt="Manneet Chat" />
-  </div>
-  
   <div id="notifBell"><span class="icon">🔔</span> <span id="notifCount"></span></div>
   <div id="notifDropdown">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
@@ -1495,12 +1508,19 @@ function resetScreens() {
   box-shadow:0 6px 20px rgba(16,185,129,0.3);z-index:10000;font-weight:600;">
     ✅ Profile updated successfully!
   </div>
+  
+  <!-- Fullscreen Photo Viewer -->
+  <div id="photoViewer">
+    <button id="photoViewerClose" onclick="closePhotoViewer()">← Back</button>
+    <img src="" alt="Photo" />
+  </div>
+  
   <script>
   function showCustomAlert(msg){
     const box=document.getElementById("customAlert");
     box.innerText=msg;
     box.style.display="block";
-    setTimeout(()=>{box.style.display="none";"},3000);
+    setTimeout(()=>{box.style.display="none";},3000);
   }
   </script>
 
