@@ -1372,13 +1372,31 @@ function resetScreens() {
       transform: scale(1.15);
     }
 
-    /* Mobile responsive */
-    @media (max-width: 768px) {
-      body{
-        padding: 0;
-        margin: 0;
-        overflow: hidden;
-      }
+@media (max-width: 768px) {
+  #chatScreen{
+    padding: 50px 12px 12px 12px;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+  }
+  
+  #chatScreen h2 {
+    margin-top: 0;
+    margin-bottom: 8px;
+    flex-shrink: 0;
+  }
+  
+  #typingIndicator {
+    flex-shrink: 0;
+    margin-bottom: 4px;
+  }
 .screen{
   margin: 0;
   padding: 16px;
@@ -1478,11 +1496,17 @@ function resetScreens() {
   width: 14px;
   height: 14px;
 }
-      .chatInputControls{
+.chatInputControls{
     flex-wrap: nowrap;
     flex-shrink: 0;
     gap: 6px;
     padding-bottom: 8px;
+    position: sticky;
+    bottom: 0;
+    background: var(--white);
+    padding-top: 8px;
+    border-top: 2px solid var(--light-pink);
+    margin-top: auto;
   }
   
   .chatInputControls input{
