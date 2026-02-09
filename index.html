@@ -58,15 +58,6 @@
     function showScreen(id) {
       resetScreens();
       document.getElementById(id).style.display = "block";
-      
-      // Hide/show notification bell based on screen
-      const notifBell = document.getElementById("notifBell");
-      if (id === "chatScreen") {
-        notifBell.style.display = "none";
-      } else {
-        notifBell.style.display = "flex";
-      }
-      
       // prevent duplicate consecutive entries
       if (screenHistory[screenHistory.length-1] !== id) screenHistory.push(id);
     }
@@ -77,18 +68,9 @@
         const prev = screenHistory[screenHistory.length - 1];
         resetScreens();
         document.getElementById(prev).style.display = "block";
-        
-        // Hide/show notification bell
-        const notifBell = document.getElementById("notifBell");
-        if (prev === "chatScreen") {
-          notifBell.style.display = "none";
-        } else {
-          notifBell.style.display = "flex";
-        }
       } else {
         resetScreens();
         document.getElementById("homeScreen").style.display = "block";
-        document.getElementById("notifBell").style.display = "flex";
         screenHistory = ["homeScreen"];
       }
     }
@@ -896,7 +878,6 @@ function resetScreens() {
       -ms-user-select: none;
       user-select: none;
       -webkit-touch-callout: none;
-      overflow-x: hidden;
     }
     .screen{
       display:none;
@@ -907,6 +888,9 @@ function resetScreens() {
       border-radius:24px;
       box-shadow:0 10px 40px rgba(255,77,136,0.15);
       position:relative;
+    }
+    .screen#chatScreen{
+      display:none;
     }
     h2{
       color:var(--primary-pink);
@@ -1037,26 +1021,24 @@ function resetScreens() {
       font-size: 13px;
       margin-top: 2px;
     }
-.back-small{
-  position:absolute;
-  top:10px;
-  left:10px;
-  background:var(--blue);
-  color:#fff;
-  padding:8px 16px;
-  border-radius:20px;
-  cursor:pointer;
-  border:none;
-  box-shadow: 0 4px 12px rgba(59,130,246,0.3);
-  font-weight: 600;
-  z-index: 1000;
-  font-size: 14px;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  width: auto;
-  white-space: nowrap;
-}
+    .back-small{
+      position:absolute;
+      top:10px;
+      left:10px;
+      background:var(--blue);
+      color:#fff;
+      padding:8px 16px;
+      border-radius:20px;
+      cursor:pointer;
+      border:none;
+      box-shadow: 0 4px 12px rgba(59,130,246,0.3);
+      font-weight: 600;
+      z-index: 1000;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
     .back-small svg{
       width: 16px;
       height: 16px;
@@ -1064,13 +1046,14 @@ function resetScreens() {
     }
     #chatBox{
       border:2px solid var(--light-pink);
-      height:400px;
+      height:calc(100vh - 280px);
       overflow-y:auto;
       overflow-x:hidden;
       padding:16px;
       border-radius:16px;
       background: var(--lighter-pink);
       margin-bottom: 12px;
+      touch-action: pan-y;
     }
     
     /* Improved message bubbles */
@@ -1309,6 +1292,7 @@ function resetScreens() {
     .chatInputControls{
       display: flex;
       gap: 8px;
+      margin-top: 12px;
       align-items: center;
     }
     .chatInputControls input{
@@ -1326,7 +1310,6 @@ function resetScreens() {
       justify-content: center;
       transition: all 0.3s ease;
       padding: 0;
-      flex-shrink: 0;
     }
     .iconBtn:hover{
       background: var(--light-pink);
@@ -1342,10 +1325,9 @@ function resetScreens() {
       display: none;
     }
     #stickerPicker{
-      position: fixed;
-      bottom: 140px;
-      left: 50%;
-      transform: translateX(-50%);
+      position: absolute;
+      bottom: 70px;
+      right: 20px;
       background: var(--white);
       border: 2px solid var(--primary-pink);
       border-radius: 16px;
@@ -1381,264 +1363,118 @@ function resetScreens() {
         padding: 0;
         margin: 0;
         overflow: hidden;
-        position: fixed;
-        width: 100%;
-        height: 100%;
       }
-      
       .screen{
         margin: 0;
         padding: 16px;
         border-radius: 0;
         height: 100vh;
         max-width: 100%;
-        overflow-y: auto;
-        -webkit-overflow-scrolling: touch;
       }
-      
       #chatScreen{
-        padding: 60px 12px 12px 12px;
-        height: 100vh;
-        overflow: hidden;
-        display: flex;
-        flex-direction: column;
+        padding: 60px 16px 16px 16px;
       }
-      
-      #chatScreen h2 {
-        margin-top: 0;
-        margin-bottom: 4px;
-        flex-shrink: 0;
+      h2{
+        font-size: 20px;
+        margin-top: 8px;
       }
-      
-      #typingIndicator{
-        flex-shrink: 0;
-        margin-bottom: 8px;
-      }
-      
-      #chatBox{
-        flex: 1;
-        min-height: 0;
-        height: auto;
-        overflow-y: auto;
-        -webkit-overflow-scrolling: touch;
-        margin-bottom: 12px;
-      }
-      
-      #chatRoomList, #matesList{
-        max-height: calc(100vh - 180px);
-        overflow-y: auto;
-        -webkit-overflow-scrolling: touch;
-        overscroll-behavior: contain;
-        padding-bottom: 20px;
-      }
-      
       input, button{
         font-size: 14px;
         padding: 10px 14px;
       }
-      
       .mainOptions{
         flex-direction: row;
         justify-content: center;
         flex-wrap: wrap;
       }
-      
       .mainOptions button{
         padding: 5px 10px;
         font-size: 10px;
         flex: 0 0 auto;
       }
-      
       #defaultWhiteBox{
         padding: 14px;
       }
-      
       #defaultWhiteBox > div:first-child{
-        flex-direction: row !important;
+        flex-direction: column !important;
         align-items: center !important;
-        justify-content: space-between !important;
         gap: 10px !important;
       }
-      
-      #defaultWhiteBox .profileBubble{
-        font-size: 40px;
-        flex-shrink: 0;
-      }
-      
-      #defaultWhiteBox .mainOptions{
-        flex: 1;
-        justify-content: flex-end;
-      }
-      
       .profileBubble{
         font-size: 42px;
       }
-      
+      #chatBox{
+        height: calc(100vh - 240px);
+        min-height: 250px;
+      }
       .msgBubble{
         max-width: 85%;
         font-size: 14px;
       }
-      
       #notifDropdown{
         width: calc(100vw - 40px);
         left: auto;
         right: 20px;
       }
-      
       #stickerPicker{
         width: calc(100vw - 40px);
-        right: auto;
-        left: 50%;
-        transform: translateX(-50%);
-        bottom: 80px;
+        right: 20px;
+        left: 20px;
       }
-      
       .back-small{
-        left: 10px;
-        top: 10px;
+        left: 20px;
+        bottom: 16px;
         transform: none;
-        padding: 8px 12px;
-        font-size: 13px;
-        gap: 3px;
-        max-width: 80px;
       }
-      
-      .back-small svg{
-        width: 14px;
-        height: 14px;
-      }
-      
       .chatInputControls{
-        flex-wrap: nowrap;
-        flex-shrink: 0;
-        gap: 6px;
-        padding-bottom: env(safe-area-inset-bottom);
+        flex-wrap: wrap;
       }
-      
       .chatInputControls input{
-        flex: 1;
-        min-width: 0;
-        font-size: 14px;
-        padding: 10px 12px;
+        width: 100%;
       }
-      
-      .chatInputControls button#sendBtn {
-        padding: 10px 16px;
-        white-space: nowrap;
-        flex-shrink: 0;
-      }
-      
       .iconBtn{
         width: 40px;
         height: 40px;
-        flex-shrink: 0;
-      }
-      
-      .iconBtn svg {
-        width: 20px;
-        height: 20px;
       }
     }
 
     #fbStatus { display: none !important; }
     
     /* Waving Hand Animation */
-  #waveAnimation{
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(135deg, var(--lighter-pink) 0%, #ffe8f0 100%);
-  z-index: 99999;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  gap: 40px;
-}
-
-.wave-container{
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.wave-hand{
-  animation: wave 1.2s ease-in-out infinite;
-  transform-origin: 50% 85%;
-  filter: drop-shadow(0 8px 16px rgba(255,77,136,0.2));
-}
-
-@keyframes wave {
-  0%, 100% { transform: rotate(0deg); }
-  10% { transform: rotate(14deg); }
-  20% { transform: rotate(-10deg); }
-  30% { transform: rotate(14deg); }
-  40% { transform: rotate(-8deg); }
-  50% { transform: rotate(10deg); }
-  60% { transform: rotate(0deg); }
-}
-
-.sparkle{
-  position: absolute;
-  animation: sparkle 2s ease-in-out infinite;
-}
-
-.sparkle-1{
-  top: 10%;
-  right: 15%;
-  animation-delay: 0s;
-}
-
-.sparkle-2{
-  bottom: 20%;
-  left: 10%;
-  animation-delay: 0.7s;
-}
-
-.sparkle-3{
-  top: 30%;
-  left: 5%;
-  animation-delay: 1.4s;
-}
-
-@keyframes sparkle {
-  0%, 100% { 
-    opacity: 0;
-    transform: scale(0) rotate(0deg);
-  }
-  50% { 
-    opacity: 1;
-    transform: scale(1) rotate(180deg);
-  }
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.wave-text{
-  font-size: 28px;
-  font-weight: 700;
-  color: var(--primary-pink);
-  text-align: center;
-  animation: fadeIn 0.8s ease-out;
-  text-shadow: 0 2px 10px rgba(255,77,136,0.3);
-}
-
-@media (max-width: 768px) {
-  .wave-hand{
-    width: 120px;
-    height: 120px;
-  }
-  .wave-text{
-    font-size: 24px;
-    padding: 0 20px;
-  }
-}
+    #waveAnimation{
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, var(--lighter-pink) 0%, #ffe8f0 100%);
+      z-index: 99999;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 30px;
+    }
+    .wave-hand{
+      animation: wave 1s ease-in-out infinite;
+      transform-origin: 70% 70%;
+    }
+    @keyframes wave {
+      0%, 100% { transform: rotate(0deg); }
+      25% { transform: rotate(20deg); }
+      75% { transform: rotate(-10deg); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .wave-text{
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--primary-pink);
+      text-align: center;
+      animation: fadeIn 0.8s ease-out;
+    }
     
     /* Fullscreen Photo Viewer */
     #photoViewer{
@@ -1685,68 +1521,32 @@ function resetScreens() {
     <span id="notifCount"></span>
   </div>
   
- <!-- Waving Hand Animation -->
-<div id="waveAnimation">
-  <div class="wave-container">
-    <svg class="wave-hand" width="140" height="140" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <!-- Waving Hand Animation -->
+  <div id="waveAnimation">
+    <svg class="wave-hand" width="120" height="120" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id="skinGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" style="stop-color:#FFDAB3;stop-opacity:1" />
-          <stop offset="100%" style="stop-color:#FFC896;stop-opacity:1" />
+          <stop offset="0%" style="stop-color:#FFD1A9;stop-opacity:1" />
+          <stop offset="100%" style="stop-color:#FFBE8F;stop-opacity:1" />
         </linearGradient>
-        <filter id="handShadow">
-          <feDropShadow dx="0" dy="4" stdDeviation="3" flood-opacity="0.2"/>
-        </filter>
       </defs>
-      
-      <g filter="url(#handShadow)">
-        <!-- Wrist -->
-        <rect x="35" y="75" width="30" height="15" rx="7" fill="url(#skinGradient)" stroke="#E5A572" stroke-width="2"/>
-        
-        <!-- Palm -->
-        <ellipse cx="50" cy="55" rx="22" ry="26" fill="url(#skinGradient)" stroke="#E5A572" stroke-width="2"/>
-        
-        <!-- Thumb -->
-        <ellipse cx="28" cy="48" rx="7" ry="13" fill="url(#skinGradient)" stroke="#E5A572" stroke-width="2" transform="rotate(-35 28 48)"/>
-        <circle cx="24" cy="38" r="5.5" fill="url(#skinGradient)" stroke="#E5A572" stroke-width="2"/>
-        
-        <!-- Index finger -->
-        <rect x="40" y="15" width="8" height="25" rx="4" fill="url(#skinGradient)" stroke="#E5A572" stroke-width="2"/>
-        <circle cx="44" cy="13" r="5" fill="url(#skinGradient)" stroke="#E5A572" stroke-width="2"/>
-        
-        <!-- Middle finger -->
-        <rect x="50" y="10" width="8" height="28" rx="4" fill="url(#skinGradient)" stroke="#E5A572" stroke-width="2"/>
-        <circle cx="54" cy="8" r="5" fill="url(#skinGradient)" stroke="#E5A572" stroke-width="2"/>
-        
-        <!-- Ring finger -->
-        <rect x="60" y="15" width="8" height="25" rx="4" fill="url(#skinGradient)" stroke="#E5A572" stroke-width="2"/>
-        <circle cx="64" cy="13" r="5" fill="url(#skinGradient)" stroke="#E5A572" stroke-width="2"/>
-        
-        <!-- Pinky -->
-        <rect x="70" y="22" width="7" height="20" rx="3.5" fill="url(#skinGradient)" stroke="#E5A572" stroke-width="2"/>
-        <circle cx="73.5" cy="20" r="4.5" fill="url(#skinGradient)" stroke="#E5A572" stroke-width="2"/>
-        
-        <!-- Palm details -->
-        <ellipse cx="42" cy="60" rx="3" ry="6" fill="#E5A572" opacity="0.15"/>
-        <ellipse cx="50" cy="62" rx="3" ry="7" fill="#E5A572" opacity="0.15"/>
-        <ellipse cx="58" cy="60" rx="3" ry="6" fill="#E5A572" opacity="0.15"/>
-      </g>
+      <!-- Palm -->
+      <ellipse cx="32" cy="35" rx="15" ry="18" fill="url(#skinGradient)" stroke="#E5A572" stroke-width="1.5"/>
+      <!-- Thumb -->
+      <ellipse cx="20" cy="28" rx="5" ry="9" fill="url(#skinGradient)" stroke="#E5A572" stroke-width="1.5" transform="rotate(-30 20 28)"/>
+      <!-- Index finger -->
+      <rect x="27" y="10" width="6" height="16" rx="3" fill="url(#skinGradient)" stroke="#E5A572" stroke-width="1.5"/>
+      <!-- Middle finger -->
+      <rect x="34" y="8" width="6" height="18" rx="3" fill="url(#skinGradient)" stroke="#E5A572" stroke-width="1.5"/>
+      <!-- Ring finger -->
+      <rect x="41" y="10" width="6" height="16" rx="3" fill="url(#skinGradient)" stroke="#E5A572" stroke-width="1.5"/>
+      <!-- Pinky -->
+      <rect x="48" y="14" width="5" height="13" rx="2.5" fill="url(#skinGradient)" stroke="#E5A572" stroke-width="1.5"/>
+      <!-- Wrist -->
+      <rect x="22" y="48" width="20" height="8" rx="4" fill="url(#skinGradient)" stroke="#E5A572" stroke-width="1.5"/>
     </svg>
-    
-    <!-- Sparkles around hand -->
-    <svg class="sparkle sparkle-1" width="30" height="30" viewBox="0 0 24 24">
-      <path d="M12 0L14 10L24 12L14 14L12 24L10 14L0 12L10 10Z" fill="var(--primary-pink)" opacity="0.6"/>
-    </svg>
-    <svg class="sparkle sparkle-2" width="25" height="25" viewBox="0 0 24 24">
-      <path d="M12 0L14 10L24 12L14 14L12 24L10 14L0 12L10 10Z" fill="#ff6b9d" opacity="0.5"/>
-    </svg>
-    <svg class="sparkle sparkle-3" width="20" height="20" viewBox="0 0 24 24">
-      <path d="M12 0L14 10L24 12L14 14L12 24L10 14L0 12L10 10Z" fill="var(--primary-pink)" opacity="0.7"/>
-    </svg>
+    <div class="wave-text">Hi there Nancy Di Mummy!</div>
   </div>
-  
-  <div class="wave-text">Hi there Nancy Di Mummy!</div>
-</div>
   
   <div id="notifDropdown">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
@@ -1790,7 +1590,7 @@ function resetScreens() {
               <path d="M12 14c-6.1 0-8 3.13-8 5v3h16v-3c0-1.87-1.9-5-8-5z"/>
             </svg>
           </div>
-          <div style="font-weight:700;font-size:18px;color:var(--primary-pink);"></div>
+          <div style="font-weight:700;font-size:18px;color:var(--primary-pink);">Pink Chat</div>
         </div>
         <div class="mainOptions">
           <button onclick="openMatesPage()">
@@ -1887,6 +1687,7 @@ function resetScreens() {
       Back
     </button>
   </div>
+
   <div id="chatRoomsScreen" class="screen">
     <h2>
       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle;margin-right:8px;">
