@@ -1394,13 +1394,19 @@ function resetScreens() {
   overscroll-behavior: contain;
   padding-bottom: 20px;
 }
-      #chatScreen{
-        padding: 60px 16px 16px 16px;
-      }
-      h2{
-        font-size: 20px;
-        margin-top: 8px;
-      }
+ #chatScreen{
+    padding: 50px 12px 12px 12px;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  #chatScreen h2 {
+    margin-top: 0;
+    margin-bottom: 8px;
+    flex-shrink: 0;
+  }
       input, button{
         font-size: 14px;
         padding: 10px 14px;
@@ -1435,10 +1441,15 @@ function resetScreens() {
       .profileBubble{
         font-size: 42px;
       }
-      #chatBox{
-        height: calc(100vh - 240px);
-        min-height: 250px;
-      }
+       
+  #chatBox{
+    height: auto;
+    flex: 1;
+    min-height: 0;
+    overflow-y: scroll;
+    -webkit-overflow-scrolling: touch;
+    margin-bottom: 8px;
+  }
       .msgBubble{
         max-width: 85%;
         font-size: 14px;
@@ -1467,16 +1478,35 @@ function resetScreens() {
   height: 14px;
 }
       .chatInputControls{
-        flex-wrap: wrap;
-      }
-      .chatInputControls input{
-        width: 100%;
-      }
-      .iconBtn{
-        width: 40px;
-        height: 40px;
-      }
-    }
+    flex-wrap: nowrap;
+    flex-shrink: 0;
+    gap: 6px;
+    padding-bottom: 8px;
+  }
+  
+  .chatInputControls input{
+    flex: 1;
+    min-width: 0;
+    font-size: 14px;
+    padding: 10px 12px;
+  }
+  
+  .chatInputControls button#sendBtn {
+    padding: 10px 16px;
+    white-space: nowrap;
+  }
+  
+  .iconBtn{
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+  }
+  
+  .iconBtn svg {
+    width: 20px;
+    height: 20px;
+  }
+}
 
     #fbStatus { display: none !important; }
     
