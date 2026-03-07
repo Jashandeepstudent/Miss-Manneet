@@ -1,229 +1,406 @@
 
-
-
-
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<title>Themed Task App — Study Counter v2</title>
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<style>
-:root{
-  --card-w:820px;
-  --radius:18px;
-  --accent:#4a90e2;
-  --btn-text:#ffffff;
-  --bg1:#eef2ff;
-  --bg2:#ffffff;
-  --timer-color:#0b1220;
-  --muted:#6b7280;
-  --progress-gradient: linear-gradient(90deg,#4a90e2,#8b5cf6);
-}
-*{box-sizing:border-box; font-family:Inter,system-ui,Segoe UI,Roboto,Arial; }
-html,body{height:100%; margin:0; background:linear-gradient(135deg,var(--bg1),var(--bg2)); }
-.container{ width:var(--card-w); max-width:96vw; margin:30px auto; background:rgba(255,255,255,0.95); border-radius:var(--radius); padding:22px; box-shadow:0 20px 60px rgba(2,6,23,0.12); overflow:auto; max-height:86vh; }
-.header{ display:flex; align-items:center; gap:16px; }
-.logo{ width:72px; height:72px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:28px; background:linear-gradient(180deg,#f0f0f0,#e6e6e6); color:#333; }
-.title{ margin:0; font-size:20px; font-weight:700; }
-.subtitle{ margin:2px 0 0; color:var(--muted); font-size:13px; }
-.header-actions{ margin-left:auto; display:flex; gap:10px; align-items:center; }
-
-/* study bar */
-.study-wrapper{ display:flex; flex-direction:column; gap:6px; }
-.study-meta{ font-size:13px; color:var(--muted); display:flex; gap:10px; align-items:center; }
-.progress{ height:12px; background:#edf2f7; border-radius:8px; overflow:hidden; width:220px; margin-top:4px; }
-.progress-inner{ height:100%; width:0%; background:var(--progress-gradient); transition:width .5s; }
-.level-title{ font-size:12px; color:var(--muted); margin-top:4px; }
-
-/* selected red */
-.selected-red{ box-shadow: 0 8px 30px rgba(255,82,82,0.14) !important; border:2px solid #ff4d4d !important; }
-
-/* form */
-.row{ display:flex; gap:12px; align-items:center; }
-.col{ flex:1; }
-.input, input[type="text"], input[type="number"], select, input[type="date"], input[type="time"]{ width:100%; padding:12px 14px; border-radius:12px; border:1px solid #e6eef8; font-size:15px; outline:none; background:white; box-shadow: inset 0 -4px 12px rgba(0,0,0,0.03); }
-.btn{ padding:12px 16px; border-radius:12px; border:none; background:var(--accent); color:var(--btn-text); font-weight:700; cursor:pointer; box-shadow:0 8px 24px rgba(0,0,0,0.12); }
-.btn.secondary{ background:#6b7280; color:white; }
-.btn.danger{ background:#e24a4a; color:white; }
-.small{ padding:8px 10px; border-radius:10px; font-weight:700; }
-
-/* grid */
-.grid{ display:grid; gap:14px; margin-top:16px; }
-.boxes{ display:grid; grid-template-columns:repeat(2,1fr); gap:14px; margin-top:12px; }
-.box-card{ padding:16px; border-radius:12px; background:linear-gradient(180deg,#fff,#fbfbff); box-shadow:0 8px 30px rgba(0,0,0,0.06); }
-.box-title{ font-weight:800; font-size:18px; }
-.box-meta{ color:var(--muted); font-size:13px; }
-
-/* table */
-.table{ width:100%; border-collapse:collapse; margin-top:12px; }
-.table th, .table td{ padding:10px; border-bottom:1px solid #edf2f7; text-align:left; }
-
-/* modal */
-.modal{ position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.45); z-index:9999; }
-.modal-card{ width:420px; max-width:92vw; background:white; padding:16px; border-radius:12px; box-shadow:0 20px 60px rgba(2,6,23,0.2); }
-.hidden{ display:none; }
-.muted{ color:var(--muted); font-size:13px; }
-
-/* stickers */
-.bg{ position:fixed; inset:0; pointer-events:none; z-index:0; }
-.sticker{ position:absolute; opacity:0.12; font-size:40px; transform:translate3d(0,0,0); animation:float 8s ease-in-out infinite; }
-@keyframes float{ 0%{transform:translateY(0);} 50%{transform:translateY(-20px);} 100%{transform:translateY(0);} }
-
-/* timer / mood */
-#timerDisplay{ color:var(--timer-color); }
-#moodDisplay{ display:flex; align-items:center; gap:12px; font-weight:800; }
-#moodEmoji{ font-size:48px; line-height:1; }
-#moodText{ font-size:18px; color:var(--muted); }
-
-@media(max-width:900px){ .boxes{ grid-template-columns:1fr; } .logo{ width:56px; height:56px; font-size:20px; } }
-</style>
-</head>
-<body>
-<div class="bg" id="bg"></div>
-
-<div class="container" role="main">
-  <div class="header">
-    <div class="logo" id="logo">✨</div>
-    <div id="studyWrapperContainer">
-      <!-- study-wrapper will be shown only when experience created -->
-      <div class="study-wrapper" id="studyWrapper" style="display:none;">
-        <div style="display:flex; align-items:center; gap:10px;">
-          <div class="title">Study Progress</div>
-          <div class="study-meta">
-            <div id="expText">EXP 0/20</div>
-            <div id="levelText">Lv 0/100</div>
-          </div>
-        </div>
-        <div class="progress" aria-hidden="true"><div class="progress-inner" id="progressInner"></div></div>
-        <div class="level-title" id="levelTitle">Beginner</div>
-      </div>
-    </div>
-    <div class="header-actions" id="headerActions"></div>
-  </div>
-
-  <div class="grid" id="mainGrid">
-    <!-- Step 1 -->
-    <div id="stepName">
-      <h3>Hi — tell me who you are</h3>
-      <div class="row">
-        <input id="name" class="input" type="text" placeholder="Your name (e.g., Jahshan)">
-        <input id="age" class="input" type="number" placeholder="Age" style="width:120px;">
-      </div>
-      <div style="margin-top:10px;">
-        <button class="btn" id="btnContinue">Continue</button>
-        <button class="btn secondary" id="btnReset">Reset</button>
-      </div>
-      <div id="nameError" class="muted" style="display:none; margin-top:8px;"></div>
-    </div>
-
-    <!-- Step 2 -->
-    <div id="stepCustomize" class="hidden">
-      <h3 id="greet">Hello!</h3>
-      <div class="muted">Choose purpose & theme</div>
-
-      <div style="margin-top:12px;">
-        <div style="font-weight:800; margin-bottom:6px;">Purpose</div>
-        <div class="row" style="margin-bottom:8px;">
-          <div id="purposeStudy" class="box-card" style="cursor:pointer;">Study</div>
-          <div id="purposeOther" class="box-card" style="cursor:pointer;">Other</div>
-        </div>
-
-        <div style="font-weight:800; margin-bottom:6px;">Theme</div>
-        <div class="row">
-          <div id="tCute" class="box-card" style="cursor:pointer;">Cute</div>
-          <div id="tTech" class="box-card" style="cursor:pointer;">Tech</div>
-          <div id="tCold" class="box-card" style="cursor:pointer;">Cold</div>
-        </div>
-
-        <div style="margin-top:12px;">
-          <button class="btn" id="btnFinish">Finish</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Dashboard -->
-    <div id="dashboard" class="hidden">
-      <div style="display:flex; justify-content:space-between; align-items:center;">
-        <div>
-          <h3>Your Task Boxes</h3>
-          <div class="muted">Create boxes (max 10 tasks each)</div>
-        </div>
-        <div>
-          <!-- kept Create Task Box per request -->
-          <button class="btn" id="btnCreateBox">+ Create Task Box</button>
-        </div>
-      </div>
-
-      <div class="boxes" id="boxesList" aria-live="polite" style="margin-top:12px;"></div>
-
-      <div id="allTasks" class="hidden" style="margin-top:12px;">
-        <h3>All Tasks</h3>
-        <table class="table" id="allTasksTable">
-          <thead><tr><th>Box</th><th>Task</th><th>Deadline</th><th>Status</th><th>Actions</th></tr></thead>
-          <tbody id="allTasksBody"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- Create Box Step 1 -->
-    <div id="createBox1" class="hidden">
-      <h3>Name the Task Box</h3>
-      <input id="newBoxName" class="input" type="text" placeholder="e.g., Exam prep">
-      <div style="margin-top:10px;">
-        <button class="btn" id="toCreateBox2">Next: Duration</button>
-        <button class="btn secondary" id="cancelCreateBox1">Cancel</button>
-      </div>
-      <div id="createBoxError" class="muted" style="display:none;"></div>
-    </div>
-
-    <!-- Create Box Step 2 -->
-    <div id="createBox2" class="hidden">
-      <h3>Duration</h3>
-      <div class="row">
-        <select id="recurrenceType" class="input">
-          <option value="weekly">Week</option>
-          <option value="monthly">Month</option>
-          <option value="yearly">Year</option>
-          <option value="days">Days</option>
-        </select>
-        <input id="recurrenceCount" class="input" type="number" placeholder="How many?" style="width:140px;">
-      </div>
-      <div style="margin-top:10px;">
-        <button class="btn" id="createBoxBtn">Create Box</button>
-        <button class="btn secondary" id="cancelCreateBox2">Cancel</button>
-      </div>
-    </div>
-
-    <!-- Box Detail -->
-    <div id="boxDetail" class="hidden">
-      <div style="display:flex; justify-content:space-between; align-items:center;">
-        <div>
-          <h3 id="boxTitle">Box</h3>
-          <div id="boxMeta" class="muted"></div>
-        </div>
-        <div style="display:flex; gap:8px; align-items:center;">
-          <button class="btn" id="btnAddTask">Add Task</button>
-          <button class="btn secondary" id="btnEditBox">Edit</button>
-          <button class="btn danger" id="btnDeleteBox">Delete</button>
-        </div>
-      </div>
-      <table class="table" id="tasksTable" style="margin-top:10px;">
-        <thead><tr><th style="width:120px"></th><th>Task</th><th>Deadline</th><th>Status</th><th>Actions</th></tr></thead>
-        <tbody id="tasksBody"></tbody>
-      </table>
-      <div style="margin-top:12px;">
-        <button class="btn secondary" id="backToDashboard">Back</button>
-      </div>
-    </div>
-
-
-    <!-- Study Counter Menu -->
+  <meta charset="utf-8" />
+  <title>No Title</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <script>
+  // Immediate redirect check
+  (function() {
+    const introSeen = localStorage.getItem('introSeen');
+    if (introSeen !== 'true') {
+      window.location.href = 'birthday.html';
+    }
+  })();
+</script>
+  <script type="module">
     
-    <div id="studyCounterMenu" class="hidden" style="flex-direction:column;align-items:center;gap:8px;padding-top:8px;">
-      <h2 style="margin:0;font-size:22px;">Choose Mode</h2>
-      <div class="muted" style="font-size:13px;">Pick a mode — AFK, Battle, or something wild</div>
-      <div style="margin-top:18px; display:grid; grid-template-columns:repeat(3,1fr); gap:14px; width:100%; max-width:900px; align-items:start;">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+    import {
+      getDatabase, ref, set, onChildAdded, get, child, query, limitToLast,
+      
+      onValue, onDisconnect, remove
+    } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAByLACmttf6BY6r0hEmZKYontfVqnDNpM",
+      authDomain: "mndpschoolrspura.firebaseapp.com",
+      projectId: "mndpschoolrspura",
+      storageBucket: "mndpschoolrspura.firebasestorage.app",
+      messagingSenderId: "810534224714",
+      appId: "1:810534224714:web:a3055b4a6b3bca507337b3",
+      measurementId: "G-2610K130EN"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    
+    const dbRef = ref(db);
+    let currentUser = {};
+    let screenHistory = [];
+    let currentActiveRoom = null;
+    let notifCount = 0;
+    let notifCache = {}; // store loaded notifs
+    let typingTimeouts = {};
+
+    // Sticker emojis
+    const stickers = ['😀','😂','😍','🥰','😎','🤔','😢','😭','😡','🥳','🎉','❤️','💕','👍','👏','🙏','🔥','✨','🌟','⭐','🎈','🎁','🌸','🌺','🌼','💐','🦋','🌈','☀️','🌙','💫'];
+
+    function ensureCurrentUserFromStorage() {
+      if (!currentUser || !currentUser.userid) {
+        try {
+          const saved = localStorage.getItem("chatUser");
+          if (saved) currentUser = JSON.parse(saved);
+        } catch {}
+      }
+    }
+
+    function showScreen(id) {
+      resetScreens();
+      document.getElementById(id).style.display = "block";
+      // prevent duplicate consecutive entries
+      if (screenHistory[screenHistory.length-1] !== id) screenHistory.push(id);
+    }
+
+    window.goBack = function() {
+      if (screenHistory.length > 1) {
+        screenHistory.pop();
+        const prev = screenHistory[screenHistory.length - 1];
+        resetScreens();
+        document.getElementById(prev).style.display = "block";
+      } else {
+        resetScreens();
+        document.getElementById("homeScreen").style.display = "block";
+        screenHistory = ["homeScreen"];
+      }
+    }
+
+    window.nextStep = function () {
+      const username = document.getElementById("username").value.trim();
+      const password = document.getElementById("password").value.trim();
+      if (!username || !password) { alert("Fill username and password"); return; }
+      currentUser.username = username;
+      currentUser.password = password;
+      document.getElementById("step1").style.display = "none";
+      document.getElementById("step2").style.display = "block";
+    };
+
+    window.finishRegister = async function () {
+      const userid = document.getElementById("userid").value.trim();
+      const file = document.getElementById("profilePhoto").files[0];
+      if (!userid) { alert("Enter User ID"); return; }
+      currentUser.userid = userid;
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          currentUser.photo = e.target.result; // base64 string
+          set(ref(db, "users/" + userid), currentUser).then(() => {
+            localStorage.setItem("chatUser", JSON.stringify(currentUser));
+            document.getElementById("step2").style.display = "none";
+            showHomeAfterLogin();
+            try{ updateProfileBubble(); }catch(e){}
+            
+            try {
+              set(ref(db, "presence/" + currentUser.userid), { online: true, lastSeen: Date.now(), activeRoom: null });
+              try { onDisconnect(ref(db, "presence/" + currentUser.userid + "/online")).set(false); } catch(e) {}
+              try { onDisconnect(ref(db, "presence/" + currentUser.userid + "/activeRoom")).remove(); } catch(e) {}
+            } catch(e) {}
+          });
+        };
+        reader.readAsDataURL(file);
+      } else {
+        set(ref(db, "users/" + userid), currentUser).then(() => {
+          localStorage.setItem("chatUser", JSON.stringify(currentUser));
+          document.getElementById("step2").style.display = "none";
+          showHomeAfterLogin();
+          try {
+            set(ref(db, "presence/" + currentUser.userid), { online: true, lastSeen: Date.now(), activeRoom: null });
+            try { onDisconnect(ref(db, "presence/" + currentUser.userid + "/online")).set(false); } catch(e) {}
+            try { onDisconnect(ref(db, "presence/" + currentUser.userid + "/activeRoom")).remove(); } catch(e) {}
+          } catch(e) {}
+        });
+      }
+    };
+
+    function showHomeAfterLogin() {
+      // show only Home and show a suggestion banner — do NOT auto-open chat rooms
+      showScreen("homeScreen");
+      document.getElementById("defaultWhiteBox").style.display = "flex";
+      suggestLastChatBanner();
+    }
+
+    async function suggestLastChatBanner() {
+      ensureCurrentUserFromStorage();
+      const banner = document.getElementById("continueChatBanner");
+      banner.innerHTML = ""; // clear
+      if (!currentUser.userid) return;
+      try {
+        const matesSnap = await get(child(dbRef, "mates/" + currentUser.userid));
+        if (!matesSnap.exists()) {
+          banner.innerHTML = ""; // no mates, no banner
+          return;
+        }
+        const mates = matesSnap.val();
+        let latest = { ts: 0, mateId: null, mateName: null, text: "" };
+        const mateList = Object.values(mates);
+        for (let i = 0; i < mateList.length; i++) {
+          const m = mateList[i];
+          const roomId = currentUser.userid < m.userid ? currentUser.userid + "_" + m.userid : m.userid + "_" + currentUser.userid;
+          const lastMsgSnap = await get(query(ref(db, "chats/" + roomId), limitToLast(1)));
+          if (lastMsgSnap.exists()) {
+            const val = lastMsgSnap.val();
+            const keys = Object.keys(val);
+            if (keys.length) {
+              const key = keys[0];
+              const ts = Number(key) || 0;
+              const msg = val[key];
+              if (ts > latest.ts) {
+                latest = { ts, mateId: m.userid, mateName: m.username, text: msg.text || "" };
+              }
+            }
+          }
+        }
+
+        if (latest.ts > 0) {
+          const snippet = latest.text.length > 60 ? latest.text.slice(0, 60) + "…" : latest.text;
+          banner.innerHTML = `
+            <div class="continueBanner">
+              <div style="flex:1">
+                <div style="font-weight:700">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="var(--primary-pink)" style="vertical-align:middle;margin-right:4px;">
+                    <path d="M16 9V4l1 0c.55 0 1-.45 1-1s-.45-1-1-1H7c-.55 0-1 .45-1 1s.45 1 1 1l1 0v5c0 1.66-1.34 3-3 3v2h5.97v7l1 1 1-1v-7H19v-2c-1.66 0-3-1.34-3-3z"/>
+                  </svg>
+                  Continue chat with ${escapeHtml(latest.mateName)}
+                </div>
+                <div style="font-size:13px;margin-top:6px;color:#333">"${escapeHtml(snippet)}"</div>
+              </div>
+              <div style="display:flex;gap:8px;align-items:center">
+                <button onclick="openChatRoom('${latest.mateId}','${escapeJs(latest.mateName)}')">Open</button>
+                <button onclick="document.getElementById('continueChatBanner').innerHTML=''">Dismiss</button>
+              </div>
+            </div>
+          `;
+        } else {
+          banner.innerHTML = ""; // no messages at all
+        }
+      } catch (err) {
+        banner.innerHTML = "";
+        console.error("suggestLastChatBanner error:", err);
+      }
+    }
+
+    function escapeHtml(str) {
+      return String(str || "").replace(/[&<>"']/g, function(m){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]); });
+    }
+    function escapeJs(str) { return String(str || "").replace(/'/g, "\\'"); }
+
+function updateProfileBubble(){
+      try{
+        const el = document.getElementById("profileBubble");
+        if(!el) return;
+        if (currentUser && currentUser.photo) {
+          el.innerHTML = '<img src="'+currentUser.photo+'" style="width:48px;height:48px;border-radius:50%;object-fit:cover;" />';
+        } else {
+          el.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="var(--primary-pink)"><circle cx="12" cy="8" r="4"/><path d="M12 14c-6.1 0-8 3.13-8 5v3h16v-3c0-1.87-1.9-5-8-5z"/></svg>';
+        }
+      }catch(e){}
+    }
+
+    // helper: show an editable profile form (vertical) and allow saving photo + credentials
+    window.saveProfileEdits = async function(){
+      try{
+        const name = document.getElementById('edit_username').value.trim();
+        const pass = document.getElementById('edit_password').value.trim();
+        const file = document.getElementById('edit_profilePhoto').files[0];
+        if(!name){ alert('Enter a username'); return; }
+        currentUser.username = name;
+        if(pass) currentUser.password = pass;
+        if(file){
+          const reader = new FileReader();
+          reader.onload = async function(ev){
+            currentUser.photo = ev.target.result;
+            try{
+              await set(ref(db, 'users/' + currentUser.userid), currentUser);
+              localStorage.setItem('chatUser', JSON.stringify(currentUser));
+              // propagate photo to other people's mate lists
+              try{
+                const matesSnap = await get(child(dbRef, 'mates/' + currentUser.userid));
+                if(matesSnap.exists()){
+                  const mates = matesSnap.val();
+                  Object.keys(mates).forEach(mid => {
+                    try{ set(ref(db, 'mates/' + mid + '/' + currentUser.userid + '/photo'), currentUser.photo); }catch(e){}
+                  });
+                }
+              }catch(e){}
+              updateProfileBubble();
+              viewProfile(currentUser.username, currentUser.userid, currentUser.password || '');
+              showCustomAlert('Profile saved');
+              document.querySelector('#editProfileSaveBtn').disabled=false;
+              document.querySelector('#editProfileSaveBtn').innerText='Save';
+            }catch(e){ console.error(e); showCustomAlert('Error saving profile');
+              document.querySelector('#editProfileSaveBtn').disabled=false;
+              document.querySelector('#editProfileSaveBtn').innerText='Save'; }
+          };
+          reader.readAsDataURL(file);
+        } else {
+          try{
+            await set(ref(db, 'users/' + currentUser.userid), currentUser);
+            localStorage.setItem('chatUser', JSON.stringify(currentUser));
+            updateProfileBubble();
+            viewProfile(currentUser.username, currentUser.userid, currentUser.password || '');
+            showCustomAlert('Profile saved');
+              document.querySelector('#editProfileSaveBtn').disabled=false;
+              document.querySelector('#editProfileSaveBtn').innerText='Save';
+          }catch(e){ console.error(e); showCustomAlert('Error saving profile');
+              document.querySelector('#editProfileSaveBtn').disabled=false;
+              document.querySelector('#editProfileSaveBtn').innerText='Save'; }
+        }
+      }catch(e){ console.error(e); showCustomAlert('Error');
+      document.querySelector('#editProfileSaveBtn').disabled=false;
+      document.querySelector('#editProfileSaveBtn').innerText='Save'; }
+    }
+
+    function cancelEditProfile(){
+      if(currentUser && currentUser.userid) viewProfile(currentUser.username, currentUser.userid, currentUser.password || '');
+    }
+        window.showMyProfile = function () {
+      ensureCurrentUserFromStorage();
+      if (!currentUser.userid || !currentUser.username) { alert("Please complete registration"); return; }
+      viewProfile(currentUser.username, currentUser.userid, currentUser.password || "");
+    };
+
+    window.searchMate = async function () {
+      const mateId = document.getElementById("searchInput").value.trim();
+      const resultBox = document.getElementById("searchResult");
+      resultBox.innerHTML = "";
+      if (!mateId) { resultBox.innerText = "Enter a User ID to search."; return; }
+      ensureCurrentUserFromStorage();
+      if (!currentUser.userid) { resultBox.innerText = "Please login/register first."; return; }
+      try {
+        const snap = await get(child(dbRef, "users/" + mateId));
+        if (snap.exists()) {
+          const mate = snap.val();
+          resultBox.innerHTML = `
+            <div class="profileCard">
+              <div class="pc-left">
+                ${mate.photo ? `<img src="${mate.photo}" style="width:50px;height:50px;border-radius:50%;object-fit:cover;" />` : '<svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 24 24" fill="var(--primary-pink)"><circle cx="12" cy="8" r="4"/><path d="M12 14c-6.1 0-8 3.13-8 5v3h16v-3c0-1.87-1.9-5-8-5z"/></svg>'}
+              </div>
+              <div class="pc-body">
+                <div class="pc-name">${escapeHtml(mate.username)}</div>
+                <div class="pc-id">ID: ${escapeHtml(mate.userid)}</div>
+                <div class="pc-actions">
+                  <button onclick="makeMate('${mate.userid}','${escapeJs(mate.username)}')">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle;margin-right:4px;">
+                      <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                    </svg>
+                    Add Mate
+                  </button>
+                </div>
+              </div>
+            </div>
+          `;
+        } else resultBox.innerText = "No user found.";
+      } catch (err) {
+        resultBox.innerText = "Error searching mate.";
+      }
+    };
+
+    window.makeMate = async function (mateId, mateName) {
+      ensureCurrentUserFromStorage();
+      if (!currentUser.userid) { alert("Login first"); return; }
+      try {
+        const snap = await get(child(dbRef, "users/" + mateId));
+        const mate = snap.exists() ? snap.val() : null;
+        const mateObj = { userid: mateId, username: mateName, photo: mate && mate.photo ? mate.photo : '' };
+        await set(ref(db, "mates/" + currentUser.userid + "/" + mateId), mateObj);
+        // reciprocate: include current user's photo as well
+        const myObj = { userid: currentUser.userid, username: currentUser.username, photo: currentUser.photo || '' };
+        await set(ref(db, "mates/" + mateId + "/" + currentUser.userid), myObj);
+        document.getElementById("searchResult").innerHTML = `<div class="successMsg">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="#10b981" style="vertical-align:middle;margin-right:6px;">
+            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+          </svg>
+          Mate added successfully
+        </div>`;
+      } catch(e){
+        console.error(e);
+        document.getElementById("searchResult").innerHTML = `<div class="successMsg">Error adding mate</div>`;
+      }
+    };
+
+    window.openMatesPage = async function () {
+      ensureCurrentUserFromStorage();
+      if (!currentUser.userid) { alert("Login first"); return; }
+      showScreen("matesScreen");
+      const list = document.getElementById("matesList");
+      list.innerHTML = "";
+      try {
+        const snap = await get(child(dbRef, "mates/" + currentUser.userid));
+        if (snap.exists()) {
+          const mates = snap.val();
+          Object.values(mates).forEach(m => {
+            if (m.userid === currentUser.userid) return; // skip self
+            if (m.userid === currentUser.userid) return; // skip self
+            const card = document.createElement("div");
+            card.className = "mateCard";
+            card.innerHTML = `
+              <div class="mate-left">
+                ${m.photo ? `<img src="${m.photo}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;" />` : '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="var(--primary-pink)"><circle cx="12" cy="8" r="4"/><path d="M12 14c-6.1 0-8 3.13-8 5v3h16v-3c0-1.87-1.9-5-8-5z"/></svg>'}
+              </div>
+              <div class="mate-mid">
+                <div class="mname">${escapeHtml(m.username)}</div>
+                <div class="mid">ID: ${escapeHtml(m.userid)}</div>
+              </div>
+            `;
+            list.appendChild(card);
+          });
+        } else list.innerText = "No mates yet.";
+      } catch { list.innerText = "Error loading mates."; }
+    };
+
+    window.viewProfile = function (name, id, pass) {
+      showScreen("profileScreen");
+      // If viewing current user -> allow edit
+      let photoHtml = '<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="var(--primary-pink)"><circle cx="12" cy="8" r="4"/><path d="M12 14c-6.1 0-8 3.13-8 5v3h16v-3c0-1.87-1.9-5-8-5z"/></svg>';
+      try {
+        const userData = JSON.parse(localStorage.getItem("chatUser") || "{}");
+        if (userData && userData.userid === id && userData.photo) {
+          photoHtml = `<img src="${userData.photo}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;" />`;
+        } else {
+          // try to load photo from users/ node
+          try{
+            get(child(dbRef, 'users/' + id)).then(snap => {
+              if(snap.exists() && snap.val().photo) {
+                document.getElementById('profileContent').querySelector('.profileBigAvatar').innerHTML = `<img src="${snap.val().photo}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;" />`;
+              }
+            });
+          }catch(e){}
+        }
+      } catch(e){}
+      // If this is own profile, show editable vertical form
+      const isMine = currentUser && currentUser.userid === id;
+      if(isMine){
+        document.getElementById("profileContent").innerHTML = `
+          <div class="profileBig" style="flex-direction:column;align-items:flex-start;">
+            <div class="profileBigAvatar">${photoHtml}</div>
+            <div style="width:100%;margin-top:12px;display:flex;flex-direction:column;gap:8px;">
+              <label style="font-weight:700">Username</label>
+              <input id="edit_username" value="${escapeHtml(name)}" style="width:100%"/>
+              <label style="font-weight:700">Password</label>
+              <input id="edit_password" type="text" value="${escapeHtml(pass)}" style="width:100%"/>
+              <label style="font-weight:700">User ID (readonly)</label>
+              <input id="edit_userid" value="${escapeHtml(id)}" readonly style="width:100%;background:#f7f7f7"/>
+              <label style="font-weight:700">Change photo (optional)</label>
+              <input type="file" id="edit_profilePhoto" accept="image/*" capture="environment" />
+              <div style="display:flex;gap:8px;margin-top:8px;">
+                <button id="editProfileSaveBtn" onclick="(function(btn){btn.disabled=true;btn.innerText='Saving...';saveProfileEdits();})(this)">Save</button>
+                <button onclick="cancelEditProfile()" style="background:#fff;color:var(--accent);border:1px solid var(--accent)">Cancel</button>
+              </div>
+            </div>
+          </div>
+        `;
+late-columns:repeat(3,1fr); gap:14px; width:100%; max-width:900px; align-items:start;">
         <div class="box-card mode-card" style="display:flex;flex-direction:column;align-items:center;justify-content:center; padding:22px; cursor:pointer;" id="modeAfk">
           <div style="font-size:40px;">🛋️</div>
           <div style="font-weight:800; margin-top:8px;">AFK</div>
@@ -2125,3 +2302,4 @@ window.startPetMode = startPetMode;
 </script>
 </body>
 </html>
+
